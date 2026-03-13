@@ -1,0 +1,1083 @@
+<!doctype html>
+<html lang="id" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pendaftaran Tasmi' Al-Quran</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+  
+  <script src="./_sdk/element_sdk.js"></script>
+  <script src="./_sdk/data_sdk.js"></script>
+  <!-- SheetJS for Excel Export/Import -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&amp;family=Poppins:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            emerald: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              200: '#a7f3d0',
+              300: '#6ee7b7',
+              400: '#34d399',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+              800: '#065f46',
+              900: '#064e3b',
+              950: '#022c22'
+            },
+            gold: {
+              50: '#fffbeb',
+              100: '#fef3c7',
+              200: '#fde68a',
+              300: '#fcd34d',
+              400: '#fbbf24',
+              500: '#f59e0b',
+              600: '#d97706',
+              700: '#b45309',
+              800: '#92400e',
+              900: '#78350f'
+            }
+          },
+          fontFamily: {
+            'amiri': ['Amiri', 'serif'],
+            'poppins': ['Poppins', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="css/style.css">
+ </head>
+ <body class="h-full font-poppins">
+  <div class="app-wrapper bg-gradient-to-b from-emerald-950 via-emerald-900 to-emerald-950 islamic-pattern overflow-auto">
+   <nav id="navbar" class="sticky top-0 z-50 bg-emerald-950/95 backdrop-blur-md border-b border-gold-500/30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+     <div class="flex items-center justify-between h-16 lg:h-20">
+      <div class="flex items-center space-x-3">
+       <div class="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center shadow-lg"><span class="text-emerald-950 font-amiri font-bold text-xl lg:text-2xl">ت</span>
+       </div>
+       <div>
+        <h1 id="nav-title" class="text-gold-400 font-amiri font-bold text-lg lg:text-xl">Tasmi' Al-Quran</h1>
+        <p class="text-emerald-300/70 text-xs hidden sm:block">Program Hafalan Al-Quran</p>
+       </div>
+      </div>
+      <div class="hidden lg:flex items-center space-x-8"><a href="#beranda" class="nav-link text-gold-300 hover:text-gold-400 font-medium transition-colors active" data-page="beranda">Beranda</a> <a href="#pendaftaran" class="nav-link text-emerald-200 hover:text-gold-400 font-medium transition-colors" data-page="pendaftaran">Pendaftaran</a> <a href="#jadwal" class="nav-link text-emerald-200 hover:text-gold-400 font-medium transition-colors" data-page="jadwal">Jadwal</a> <a href="#pengumuman" class="nav-link text-emerald-200 hover:text-gold-400 font-medium transition-colors" data-page="pengumuman">Pengumuman</a> <a href="#login-operator" class="nav-link text-emerald-200 hover:text-gold-400 font-medium transition-colors" data-page="login-operator">Login Operator</a> <a href="#login-pentasmi" class="nav-link text-emerald-200 hover:text-gold-400 font-medium transition-colors" data-page="login-pentasmi">Login Pentasmi</a>
+      </div>
+      <button id="mobile-menu-btn" class="lg:hidden p-2 rounded-lg bg-emerald-800/50 text-gold-400 hover:bg-emerald-800 transition-colors">
+       <svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+       </svg></button>
+     </div>
+     <div id="mobile-menu" class="lg:hidden hidden pb-4 border-t border-emerald-800/50 mt-2 pt-4">
+      <div class="flex flex-col space-y-3"><a href="#beranda" class="mobile-nav-link text-gold-300 font-medium py-2 px-4 rounded-lg bg-emerald-800/30" data-page="beranda">Beranda</a> <a href="#pendaftaran" class="mobile-nav-link text-emerald-200 font-medium py-2 px-4 rounded-lg hover:bg-emerald-800/30 transition-colors" data-page="pendaftaran">Pendaftaran</a> <a href="#jadwal" class="mobile-nav-link text-emerald-200 font-medium py-2 px-4 rounded-lg hover:bg-emerald-800/30 transition-colors" data-page="jadwal">Jadwal</a> <a href="#pengumuman" class="mobile-nav-link text-emerald-200 font-medium py-2 px-4 rounded-lg hover:bg-emerald-800/30 transition-colors" data-page="pengumuman">Pengumuman</a> <a href="#login-operator" class="mobile-nav-link text-emerald-200 font-medium py-2 px-4 rounded-lg hover:bg-emerald-800/30 transition-colors" data-page="login-operator">Login Operator</a> <a href="#login-pentasmi" class="mobile-nav-link text-emerald-200 font-medium py-2 px-4 rounded-lg hover:bg-emerald-800/30 transition-colors" data-page="login-pentasmi">Login Pentasmi</a>
+      </div>
+     </div>
+    </div>
+   </nav>
+
+   <main id="main-content">
+    <section id="page-beranda" class="page-section">
+     <div class="relative min-h-[600px] flex items-center justify-center py-20 px-4 overflow-hidden">
+      <div class="absolute top-10 left-10 w-32 h-32 border border-gold-500/20 rounded-full"></div>
+      <div class="absolute bottom-10 right-10 w-48 h-48 border border-gold-500/10 rounded-full"></div>
+      <div class="absolute top-1/4 right-1/4 text-gold-500/10 text-9xl font-amiri">
+       ﷽
+      </div>
+      <div class="relative z-10 text-center max-w-4xl mx-auto">
+       <div class="mb-8 animate-fade-in-up"><span id="hero-arabic" class="text-gold-400 font-amiri text-4xl md:text-6xl leading-relaxed">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</span>
+       </div>
+       <div class="mb-4 animate-fade-in-up">
+        <p class="text-gold-400 font-medium tracking-widest uppercase text-sm mb-2">Tim Qur'an SDIT Al-Hilmi</p>
+        <div id="digital-clock" class="text-white font-mono text-2xl md:text-3xl bg-emerald-900/40 backdrop-blur-md px-6 py-2 rounded-2xl border border-gold-500/20 inline-block shadow-lg">00:00:00</div>
+       </div>
+       <div class="geometric-border w-48 mx-auto mb-8 animate-fade-in-up delay-100"></div>
+       <h1 id="hero-title" class="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 animate-fade-in-up delay-200"><span class="text-gold-400">Tasmi'</span> Al-Quran</h1>
+       <p id="hero-subtitle" class="text-xl md:text-2xl text-emerald-200/80 mb-12 font-light animate-fade-in-up delay-300">Program hafalan Al-Quran yang dibimbingan oleh ustadz dan ustadzah berpengalaman</p>
+       <div class="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up delay-400"><button onclick="navigateTo('pendaftaran')" class="px-8 py-4 bg-gradient-to-r from-gold-500 to-gold-600 text-emerald-950 font-semibold rounded-xl hover:from-gold-400 hover:to-gold-500 transform hover:scale-105 transition-all duration-300 shadow-lg shadow-gold-500/25"> Daftar Sekarang </button> <button onclick="navigateTo('jadwal')" class="px-8 py-4 border-2 border-gold-500/50 text-gold-400 font-semibold rounded-xl hover:bg-gold-500/10 hover:border-gold-400 transition-all duration-300"> Lihat Jadwal </button>
+       </div>
+      </div>
+     </div>
+     <div class="py-20 px-4">
+      <div class="max-w-6xl mx-auto">
+       <div class="text-center mb-16">
+        <h2 id="about-title-content" class="star-decoration text-3xl md:text-4xl font-bold text-white mb-4">Tentang Program Tasmi'</h2>
+        <div class="geometric-border w-32 mx-auto"></div>
+       </div>
+       <p id="about-content" class="text-center max-w-3xl mx-auto text-emerald-200/80 mb-12">Program hafalan Al-Quran yang dibimbingan oleh ustadz dan ustadzah berpengalaman</p>
+       <div class="grid md:grid-cols-3 gap-8">
+        <div class="card-shine bg-emerald-800/30 backdrop-blur-sm rounded-2xl p-8 border border-gold-500/20 hover:border-gold-500/40 transition-all duration-300 group">
+         <div class="w-16 h-16 bg-gradient-to-br from-gold-400 to-gold-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+          <svg class="w-8 h-8 text-emerald-950" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+          </svg>
+         </div>
+         <h3 id="card1-title" class="text-xl font-bold text-gold-400 mb-4">Bimbingan Langsung</h3>
+         <p id="card1-desc" class="text-emerald-200/70 leading-relaxed">Pembelajaran langsung dengan ustadz dan ustadzah berpengalaman untuk memastikan bacaan yang benar.</p>
+        </div>
+        <div class="card-shine bg-emerald-800/30 backdrop-blur-sm rounded-2xl p-8 border border-gold-500/20 hover:border-gold-500/40 transition-all duration-300 group">
+         <div class="w-16 h-16 bg-gradient-to-br from-gold-400 to-gold-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+          <svg class="w-8 h-8 text-emerald-950" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+          </svg>
+         </div>
+         <h3 id="card2-title" class="text-xl font-bold text-gold-400 mb-4">Evaluasi Berkala</h3>
+         <p id="card2-desc" class="text-emerald-200/70 leading-relaxed">Ujian dan evaluasi rutin untuk memantau perkembangan hafalan dan memperbaiki kesalahan.</p>
+        </div>
+        <div class="card-shine bg-emerald-800/30 backdrop-blur-sm rounded-2xl p-8 border border-gold-500/20 hover:border-gold-500/40 transition-all duration-300 group">
+         <div class="w-16 h-16 bg-gradient-to-br from-gold-400 to-gold-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+          <svg class="w-8 h-8 text-emerald-950" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+         </div>
+         <h3 id="card3-title" class="text-xl font-bold text-gold-400 mb-4">Komunitas Supportif</h3>
+         <p id="card3-desc" class="text-emerald-200/70 leading-relaxed">Bergabung dengan komunitas penghafal Al-Quran yang saling mendukung dan memotivasi.</p>
+        </div>
+       </div>
+      </div>
+     </div>
+     <div class="py-20 px-4 bg-gradient-to-r from-emerald-800/50 to-emerald-900/50">
+      <div class="max-w-4xl mx-auto text-center"><span class="text-gold-400 font-amiri text-3xl md:text-4xl block mb-6">خَيْرُكُمْ مَنْ تَعَلَّمَ الْقُرْآنَ وَعَلَّمَهُ</span>
+       <p class="text-emerald-200/70 text-lg mb-8">"Sebaik-baik kalian adalah yang mempelajari Al-Quran dan mengajarkannya"<br><span class="text-gold-400/70">- HR. Bukhari</span></p><button onclick="navigateTo('pendaftaran')" class="px-10 py-4 bg-gradient-to-r from-gold-500 to-gold-600 text-emerald-950 font-bold rounded-xl hover:from-gold-400 hover:to-gold-500 transform hover:scale-105 transition-all duration-300 shadow-lg shadow-gold-500/25"> Mulai Perjalanan Hafalan Anda </button>
+      </div>
+     </div>
+    </section>
+
+    <section id="page-pendaftaran" class="page-section hidden">
+     <div class="py-16 px-4">
+      <div class="max-w-4xl mx-auto">
+       <div class="text-center mb-12">
+        <h2 class="star-decoration text-3xl md:text-4xl font-bold text-white mb-4">Formulir Pendaftaran</h2>
+        <div class="geometric-border w-32 mx-auto mb-4"></div>
+        <p id="registration-intro" class="text-emerald-200/70">Isi formulir di bawah ini untuk mendaftar program Tasmi'</p>
+       </div>
+       <div id="registration-form-container">
+        <form id="registration-form" class="card-shine bg-emerald-800/30 backdrop-blur-sm rounded-2xl p-8 md:p-12 border border-gold-500/20">
+         <div class="mb-10">
+          <h3 class="text-xl font-bold text-gold-400 mb-6 flex items-center"><span class="w-8 h-8 bg-gold-500 text-emerald-950 rounded-full flex items-center justify-center mr-3 text-sm font-bold">1</span> Data Pendaftaran</h3>
+          <div class="grid md:grid-cols-2 gap-6">
+           <div><label for="nama_lengkap" class="block text-emerald-200 mb-2 font-medium">Nama Lengkap <span class="text-red-400">*</span></label> <input type="text" id="nama_lengkap" name="nama_lengkap" required class="input-field w-full px-4 py-3 bg-emerald-900/50 border border-emerald-700 rounded-xl text-white placeholder-emerald-500 focus:border-gold-500 focus:outline-none" placeholder="Masukkan nama lengkap">
+           </div>
+           <div><label for="kelas" class="block text-emerald-200 mb-2 font-medium">Kelas <span class="text-red-400">*</span></label> <input type="text" id="kelas" name="kelas" required class="input-field w-full px-4 py-3 bg-emerald-900/50 border border-emerald-700 rounded-xl text-white placeholder-emerald-500 focus:border-gold-500 focus:outline-none" placeholder="Masukkan kelas (contoh: 7A, 8B)">
+           </div>
+           <div><label for="jenis_kelamin" class="block text-emerald-200 mb-2 font-medium">Jenis Kelamin <span class="text-red-400">*</span></label> <select id="jenis_kelamin" name="jenis_kelamin" required class="input-field w-full px-4 py-3 bg-emerald-900/50 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none"> <option value="">Pilih Jenis Kelamin</option> <option value="Laki-laki">Laki-laki</option> <option value="Perempuan">Perempuan</option> </select>
+           </div>
+           <div><label for="juz_tasmikan" class="block text-emerald-200 mb-2 font-medium">Juz yang Ditasmikan <span class="text-red-400">*</span></label> <input type="text" id="juz_tasmikan" name="juz_tasmikan" required class="input-field w-full px-4 py-3 bg-emerald-900/50 border border-emerald-700 rounded-xl text-white placeholder-emerald-500 focus:border-gold-500 focus:outline-none" placeholder="Contoh: Juz 30, Juz 1">
+           </div>
+           <div class="md:col-span-2"><label for="nama_orang_tua" class="block text-emerald-200 mb-2 font-medium">Nama Orang Tua <span class="text-red-400">*</span></label> <input type="text" id="nama_orang_tua" name="nama_orang_tua" required class="input-field w-full px-4 py-3 bg-emerald-900/50 border border-emerald-700 rounded-xl text-white placeholder-emerald-500 focus:border-gold-500 focus:outline-none" placeholder="Nama orang tua/wali">
+           </div>
+           <div class="md:col-span-2"><label for="lembar_tasmi" class="block text-emerald-200 mb-2 font-medium">Lembar Tasmi Kelas <span class="text-red-400">*</span></label> <input type="file" id="lembar_tasmi" name="lembar_tasmi" required accept="image/*" class="input-field w-full text-emerald-200 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-emerald-900/60 file:text-emerald-100 hover:file:bg-emerald-900">
+           </div>
+          </div>
+         </div>
+         <div class="text-center"><button type="submit" id="submit-btn" class="px-12 py-4 bg-gradient-to-r from-gold-500 to-gold-600 text-emerald-950 font-bold rounded-xl hover:from-gold-400 hover:to-gold-500 transform hover:scale-105 transition-all duration-300 shadow-lg shadow-gold-500/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"> <span id="submit-text">Kirim Pendaftaran</span> <span id="submit-loading" class="hidden">
+            <svg class="animate-spin inline-block w-5 h-5 mr-2" fill="none" viewbox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle> <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            </svg> Mengirim... </span> </button>
+         </div>
+        </form>
+       </div>
+      </div>
+     </div>
+    </section>
+
+    <section id="page-jadwal" class="page-section hidden">
+     <div class="py-16 px-4">
+      <div class="max-w-6xl mx-auto">
+       <div class="text-center mb-12">
+        <h2 class="star-decoration text-3xl md:text-4xl font-bold text-white mb-4">Jadwal Tasmi'</h2>
+        <div class="geometric-border w-32 mx-auto mb-4"></div>
+        <p class="text-emerald-200/70">Jadwal setoran hafalan dan kegiatan program</p>
+       </div>
+
+       <div id="public-schedule-container" class="grid md:grid-cols-2 gap-8">
+        <div class="md:col-span-2 text-center py-10 card-shine bg-emerald-800/30 rounded-2xl border border-gold-500/20">
+          <p class="text-emerald-200/70">Belum ada jadwal yang diunggah.</p>
+        </div>
+       </div>
+
+      </div>
+     </div>
+    </section>
+
+    <section id="page-pengumuman" class="page-section hidden">
+     <div class="py-16 px-4">
+      <div class="max-w-4xl mx-auto">
+       <div class="text-center mb-12">
+        <h2 class="star-decoration text-3xl md:text-4xl font-bold text-white mb-4">Pengumuman</h2>
+        <div class="geometric-border w-32 mx-auto mb-4"></div>
+        <p class="text-emerald-200/70">Informasi terbaru seputar program Tasmi'</p>
+       </div>
+       <div id="public-announcements-container" class="space-y-6">
+        <div class="text-center py-10 card-shine bg-emerald-800/30 rounded-2xl border border-gold-500/20">
+          <p class="text-emerald-200/70">Belum ada pengumuman terbaru.</p>
+        </div>
+       </div>
+      </div>
+     </div>
+    </section>
+
+    <section id="page-login-operator" class="page-section hidden">
+     <div class="min-h-[600px] flex items-center justify-center py-16 px-4">
+      <div class="w-full max-w-md">
+       <div class="card-shine bg-emerald-800/30 backdrop-blur-sm rounded-2xl p-8 border border-gold-500/20">
+        <div class="text-center mb-8">
+         <div class="w-20 h-20 bg-gradient-to-br from-gold-400 to-gold-600 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-10 h-10 text-emerald-950" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+         </div>
+         <h2 class="text-2xl font-bold text-white">Login Operator</h2>
+         <p class="text-emerald-200/70 mt-2">Akses panel administrasi</p>
+        </div>
+        <div class="p-4 bg-emerald-900/50 rounded-xl border border-emerald-700/50 mb-6">
+         <p class="text-emerald-300 text-sm text-center">Gunakan akun operator untuk masuk ke panel pengelolaan.</p>
+        </div>
+        <form id="operator-login-form" class="space-y-6">
+         <div><label for="operator-username" class="block text-emerald-200 mb-2 font-medium">Username</label> <input type="text" id="operator-username" class="input-field w-full px-4 py-3 bg-emerald-900/50 border border-emerald-700 rounded-xl text-white placeholder-emerald-500 focus:border-gold-500 focus:outline-none" placeholder="Masukkan username">
+         </div>
+         <div><label for="operator-password" class="block text-emerald-200 mb-2 font-medium">Password</label>
+          <div class="relative"><input type="password" id="operator-password" class="input-field w-full px-4 py-3 bg-emerald-900/50 border border-emerald-700 rounded-xl text-white placeholder-emerald-500 focus:border-gold-500 focus:outline-none pr-12" placeholder="••••••••"> <button type="button" onclick="togglePassword('operator-password', this)" class="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-400 hover:text-gold-400">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg></button>
+          </div>
+         </div>
+         <button type="submit" class="w-full py-3 bg-gradient-to-r from-gold-500 to-gold-600 text-emerald-950 font-bold rounded-xl hover:from-gold-400 hover:to-gold-500 transition-all"> Masuk </button>
+        </form>
+       </div>
+      </div>
+     </div>
+    </section>
+
+    <section id="page-operator-panel" class="page-section hidden">
+     <div class="py-10 px-4">
+      <div class="max-w-7xl mx-auto">
+       <div class="card-shine bg-emerald-800/30 backdrop-blur-sm rounded-2xl border border-gold-500/20 overflow-hidden">
+        <div class="flex items-center justify-between px-6 py-5 border-b border-emerald-700/50">
+         <div>
+          <h2 class="text-2xl font-bold text-white">Panel Operator</h2>
+          <p id="operator-subtitle" class="text-emerald-200/70 text-sm mt-1">Kelola data pendaftaran dan konten website</p>
+         </div>
+         <div class="flex items-center gap-3">
+          <button id="operator-logout-btn" class="px-4 py-2 rounded-xl border border-gold-500/50 text-gold-300 hover:bg-gold-500/10 transition">Logout</button>
+         </div>
+        </div>
+
+        <div class="grid lg:grid-cols-[280px_1fr]">
+         <aside class="p-5 border-b lg:border-b-0 lg:border-r border-emerald-700/50 bg-emerald-950/20">
+          <nav class="space-y-2">
+           <button class="operator-nav-btn w-full text-left px-4 py-3 rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-100 hover:border-gold-500/40 transition" data-tab="registration-settings">Pengaturan Pendaftaran</button>
+           <button class="operator-nav-btn w-full text-left px-4 py-3 rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-100 hover:border-gold-500/40 transition" data-tab="homepage">Kelola Beranda</button>
+           <button class="operator-nav-btn w-full text-left px-4 py-3 rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-100 hover:border-gold-500/40 transition" data-tab="general">Pengaturan Umum (Logo & Favicon)</button>
+           <button class="operator-nav-btn w-full text-left px-4 py-3 rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-100 hover:border-gold-500/40 transition" data-tab="approval">Kelola Persetujuan Pendaftaran</button>
+           <button class="operator-nav-btn w-full text-left px-4 py-3 rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-100 hover:border-gold-500/40 transition" data-tab="students">Data Siswa</button>
+           <button class="operator-nav-btn w-full text-left px-4 py-3 rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-100 hover:border-gold-500/40 transition" data-tab="schedule">Kelola Jadwal</button>
+           <button class="operator-nav-btn w-full text-left px-4 py-3 rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-100 hover:border-gold-500/40 transition" data-tab="graduation">Penentuan Kelulusan Tasmi</button>
+           <button class="operator-nav-btn w-full text-left px-4 py-3 rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-100 hover:border-gold-500/40 transition" data-tab="pentasmi">Kelola Akun Pentasmi</button>
+           <button class="operator-nav-btn w-full text-left px-4 py-3 rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-100 hover:border-gold-500/40 transition" data-tab="announcements">Kelola Pengumuman</button>
+           <button class="operator-nav-btn w-full text-left px-4 py-3 rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-100 hover:border-gold-500/40 transition" data-tab="certificates">Upload Sertifikat</button>
+           <button class="operator-nav-btn w-full text-left px-4 py-3 rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-100 hover:border-gold-500/40 transition" data-tab="congratulations">Ucapan Selamat</button>
+           <button class="operator-nav-btn w-full text-left px-4 py-3 rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-100 hover:border-gold-500/40 transition" data-tab="sync">Sinkronisasi</button>
+          </nav>
+         </aside>
+
+         <div class="p-6 md:p-8">
+          <div id="operator-tab-registration-settings" class="operator-tab hidden">
+           <h3 class="text-xl font-bold text-white mb-2">Pengaturan Pendaftaran</h3>
+           <p class="text-emerald-200/70 text-sm mb-6">Kelola status aktif/nonaktif formulir pendaftaran.</p>
+           
+           <div class="card-shine bg-emerald-900/30 rounded-2xl p-6 border border-emerald-700/40">
+            <div class="flex items-center justify-between">
+             <div>
+              <h4 class="text-white font-semibold">Status Pendaftaran</h4>
+              <p class="text-emerald-200/60 text-sm mt-1">Jika dinonaktifkan, calon santri tidak dapat mengisi formulir pendaftaran.</p>
+             </div>
+             <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="registration-status-toggle" class="sr-only peer">
+              <div class="w-14 h-7 bg-emerald-950/50 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-emerald-100 after:border-emerald-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-gold-500"></div>
+              <span id="registration-status-label" class="ml-3 text-sm font-medium text-emerald-200 uppercase tracking-widest">Aktif</span>
+             </label>
+            </div>
+           </div>
+          </div>
+
+          <div id="operator-tab-homepage" class="operator-tab hidden">
+           <h3 class="text-xl font-bold text-white mb-2">Kelola Beranda</h3>
+           <p class="text-emerald-200/70 text-sm mb-6">Ubah konten pada halaman beranda.</p>
+           <form id="homepage-settings-form" class="space-y-6">
+            <div class="card-shine bg-emerald-900/30 rounded-2xl p-6 border border-emerald-700/40">
+             <h4 class="text-white font-semibold mb-4">Hero Section (Paling Atas)</h4>
+             <div class="space-y-4">
+              <div>
+               <label class="block text-emerald-200 mb-2 font-medium" for="hero-arabic-input">Teks Arab (Basmalah)</label>
+               <input id="hero-arabic-input" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none font-amiri text-2xl">
+              </div>
+              <div class="grid md:grid-cols-2 gap-4">
+               <div>
+                <label class="block text-emerald-200 mb-2 font-medium" for="hero-title-input">Judul Utama</label>
+                <input id="hero-title-input" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none">
+               </div>
+               <div>
+                <label class="block text-emerald-200 mb-2 font-medium" for="hero-subtitle-input">Sub-judul</label>
+                <input id="hero-subtitle-input" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none">
+               </div>
+              </div>
+             </div>
+            </div>
+
+            <div class="card-shine bg-emerald-900/30 rounded-2xl p-6 border border-emerald-700/40">
+             <h4 class="text-white font-semibold mb-4 text-center">Tindakan Cepat</h4>
+             <button id="save-homepage-btn" class="w-full py-4 bg-gradient-to-r from-gold-500 to-gold-600 text-emerald-950 font-bold rounded-2xl hover:from-gold-400 hover:to-gold-500 transform hover:scale-[1.02] transition-all shadow-lg shadow-gold-500/20">
+               Simpan Perubahan Beranda
+             </button>
+            </div>
+
+            <div class="card-shine bg-emerald-900/30 rounded-2xl p-6 border border-emerald-700/40">
+             <h4 class="text-white font-semibold mb-4">Tentang Program</h4>
+             <div class="space-y-4">
+              <div class="grid md:grid-cols-2 gap-4">
+               <div>
+                <label class="block text-emerald-200 mb-2 font-medium" for="about-title-input">Judul Bagian</label>
+                <input id="about-title-input" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none">
+               </div>
+               <div>
+                <label class="block text-emerald-200 mb-2 font-medium" for="about-content-input">Deskripsi Singkat</label>
+                <input id="about-content-input" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none">
+               </div>
+              </div>
+              
+              <div class="border-t border-emerald-700/30 pt-4 mt-4"><p class="text-gold-400 text-sm font-bold mb-3">Tiga Kartu Informasi:</p>
+               <div class="grid md:grid-cols-3 gap-4">
+                <div class="p-4 rounded-xl bg-emerald-950/40 border border-emerald-700/30">
+                 <label class="block text-emerald-300 text-xs mb-1">Kartu 1 - Judul</label>
+                 <input id="card1-title-input" class="input-field w-full text-sm px-3 py-2 bg-emerald-900/40 border border-emerald-700 rounded-lg text-white mb-2">
+                 <label class="block text-emerald-300 text-xs mb-1">Kartu 1 - Deskripsi</label>
+                 <textarea id="card1-desc-input" rows="3" class="input-field w-full text-xs px-3 py-2 bg-emerald-900/40 border border-emerald-700 rounded-lg text-white resize-none"></textarea>
+                </div>
+                <div class="p-4 rounded-xl bg-emerald-950/40 border border-emerald-700/30">
+                 <label class="block text-emerald-300 text-xs mb-1">Kartu 2 - Judul</label>
+                 <input id="card2-title-input" class="input-field w-full text-sm px-3 py-2 bg-emerald-900/40 border border-emerald-700 rounded-lg text-white mb-2">
+                 <label class="block text-emerald-300 text-xs mb-1">Kartu 2 - Deskripsi</label>
+                 <textarea id="card2-desc-input" rows="3" class="input-field w-full text-xs px-3 py-2 bg-emerald-900/40 border border-emerald-700 rounded-lg text-white resize-none"></textarea>
+                </div>
+                <div class="p-4 rounded-xl bg-emerald-950/40 border border-emerald-700/30">
+                 <label class="block text-emerald-300 text-xs mb-1">Kartu 3 - Judul</label>
+                 <input id="card3-title-input" class="input-field w-full text-sm px-3 py-2 bg-emerald-900/40 border border-emerald-700 rounded-lg text-white mb-2">
+                 <label class="block text-emerald-300 text-xs mb-1">Kartu 3 - Deskripsi</label>
+                 <textarea id="card3-desc-input" rows="3" class="input-field w-full text-xs px-3 py-2 bg-emerald-900/40 border border-emerald-700 rounded-lg text-white resize-none"></textarea>
+                </div>
+               </div>
+              </div>
+             </div>
+            </div>
+
+            <div class="card-shine bg-emerald-900/30 rounded-2xl p-6 border border-emerald-700/40">
+             <h4 class="text-white font-semibold mb-4">Footer (Bagian Bawah)</h4>
+             <div class="space-y-4">
+              <div>
+               <label class="block text-emerald-200 mb-2 font-medium" for="footer-title-input">Judul Footer</label>
+               <input id="footer-title-input" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none">
+              </div>
+              <div>
+               <label class="block text-emerald-200 mb-2 font-medium" for="footer-description-input">Deskripsi Footer</label>
+               <textarea id="footer-description-input" rows="3" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none resize-none"></textarea>
+              </div>
+              <div class="grid md:grid-cols-2 gap-4">
+               <div>
+                <label class="block text-emerald-200 mb-2 font-medium" for="footer-phone-input">Nomor WhatsApp/Telepon</label>
+                <input id="footer-phone-input" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none" placeholder="+62 ...">
+               </div>
+               <div>
+                <label class="block text-emerald-200 mb-2 font-medium" for="footer-email-input">Email Kontak</label>
+                <input id="footer-email-input" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none" placeholder="info@...">
+               </div>
+              </div>
+             </div>
+            </div>
+            <div class="flex gap-3">
+             <button type="submit" class="px-5 py-3 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 text-emerald-950 font-semibold hover:from-gold-400 hover:to-gold-500 transition">Simpan Perubahan Beranda</button>
+             <button type="button" id="homepage-settings-reset" class="px-5 py-3 rounded-xl border border-emerald-700/60 text-emerald-100 hover:border-gold-500/40 transition">Reset ke Default</button>
+            </div>
+           </form>
+          </div>
+
+          <div id="operator-tab-registration-settings" class="operator-tab hidden">
+           <h3 class="text-xl font-bold text-white mb-2">Pengaturan Pendaftaran</h3>
+           <p class="text-emerald-200/70 text-sm mb-6">Ubah instruksi pendaftaran dan daftar target hafalan.</p>
+           <form id="reg-settings-form" class="space-y-6">
+            <div class="card-shine bg-emerald-900/30 rounded-2xl p-6 border border-emerald-700/40">
+             <div class="space-y-4">
+              <div>
+               <label class="block text-emerald-200 mb-2 font-medium" for="reg-intro-input">Instruksi Pendaftaran (Muncul di bawah judul formulir)</label>
+               <textarea id="reg-intro-input" rows="3" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none resize-none" placeholder="Isi instruksi pendaftaran..."></textarea>
+              </div>
+              <div>
+               <label class="block text-emerald-200 mb-2 font-medium" for="reg-targets-input">Daftar Target Hafalan (Satu target per baris)</label>
+               <textarea id="reg-targets-input" rows="6" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none resize-none" placeholder="Contoh:&#10;Juz 30&#10;Juz 29&#10;Surah Al-Mulk"></textarea>
+              </div>
+             </div>
+            </div>
+            <div class="flex gap-3">
+             <button type="submit" class="px-5 py-3 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 text-emerald-950 font-semibold hover:from-gold-400 hover:to-gold-500 transition">Simpan Pengaturan Pendaftaran</button>
+             <button type="button" id="reg-settings-reset" class="px-5 py-3 rounded-xl border border-emerald-700/60 text-emerald-100 hover:border-gold-500/40 transition">Reset</button>
+            </div>
+           </form>
+          </div>
+
+          <div id="operator-tab-general" class="operator-tab hidden">
+
+           <div class="grid md:grid-cols-2 gap-6">
+            <div class="card-shine bg-emerald-900/30 rounded-2xl p-6 border border-emerald-700/40">
+             <h4 class="text-white font-semibold mb-4">Logo Website</h4>
+             <div class="flex flex-col items-center gap-4">
+              <div id="logo-preview-container" class="w-24 h-24 rounded-full bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center overflow-hidden border-2 border-gold-500/30">
+               <span id="logo-preview-text" class="text-emerald-950 font-amiri font-bold text-3xl">ت</span>
+               <img id="logo-preview-img" class="w-full h-full object-cover hidden" alt="Logo Preview">
+              </div>
+              <input type="file" id="logo-upload" accept="image/*" class="hidden">
+              <button onclick="document.getElementById('logo-upload').click()" class="px-5 py-2 rounded-xl bg-gold-500/20 text-gold-400 border border-gold-500/50 hover:bg-gold-500/30 transition">Pilih Logo</button>
+              <button id="logo-reset" class="text-red-400 text-xs hover:underline">Reset ke Default</button>
+             </div>
+            </div>
+
+            <div class="card-shine bg-emerald-900/30 rounded-2xl p-6 border border-emerald-700/40">
+             <h4 class="text-white font-semibold mb-4">Favicon Website</h4>
+             <div class="flex flex-col items-center gap-4">
+              <div class="w-16 h-16 rounded-lg bg-emerald-950/50 flex items-center justify-center overflow-hidden border border-emerald-700/50">
+               <img id="favicon-preview-img" class="w-10 h-10 object-contain hidden" alt="Favicon Preview">
+               <div id="favicon-preview-placeholder" class="text-emerald-500 text-2xl font-bold">F</div>
+              </div>
+              <input type="file" id="favicon-upload" accept="image/x-icon,image/png,image/jpeg" class="hidden">
+              <button onclick="document.getElementById('favicon-upload').click()" class="px-5 py-2 rounded-xl bg-gold-500/20 text-gold-400 border border-gold-500/50 hover:bg-gold-500/30 transition">Pilih Favicon</button>
+              <button id="favicon-reset" class="text-red-400 text-xs hover:underline">Reset ke Default</button>
+             </div>
+            </div>
+           </div>
+          </div>
+
+          <div id="operator-tab-approval" class="operator-tab hidden">
+           <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+            <div>
+             <h3 class="text-xl font-bold text-white">Persetujuan Pendaftaran</h3>
+             <p class="text-emerald-200/70 text-sm mt-1">Setujui / tolak pendaftaran dan ubah statusnya.</p>
+            </div>
+            <div class="flex gap-3">
+             <select id="approval-filter" class="input-field px-4 py-2 bg-emerald-900/50 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none">
+              <option value="ALL">Semua</option>
+              <option value="Menunggu Verifikasi">Menunggu Verifikasi</option>
+              <option value="Disetujui">Disetujui</option>
+              <option value="Ditolak">Ditolak</option>
+             </select>
+             <button id="approval-refresh" class="px-4 py-2 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 text-emerald-950 font-semibold hover:from-gold-400 hover:to-gold-500 transition">Refresh</button>
+            </div>
+           </div>
+           <div class="overflow-auto rounded-xl border border-emerald-700/50">
+            <table class="min-w-full text-sm">
+             <thead class="bg-emerald-950/40 text-emerald-200">
+              <tr>
+               <th class="text-left px-4 py-3">Nama</th>
+               <th class="text-left px-4 py-3">Kelas</th>
+               <th class="text-left px-4 py-3">Juz</th>
+               <th class="text-left px-4 py-3">Status</th>
+               <th class="text-right px-4 py-3">Aksi</th>
+              </tr>
+             </thead>
+             <tbody id="approval-table" class="divide-y divide-emerald-700/40 bg-emerald-900/20"></tbody>
+            </table>
+           </div>
+          </div>
+
+          <div id="operator-tab-students" class="operator-tab hidden">
+           <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+            <div>
+             <h3 class="text-xl font-bold text-white">Data Siswa</h3>
+             <p class="text-emerald-200/70 text-sm mt-1">Lihat, ubah, dan hapus data siswa yang telah disetujui.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-3">
+             <div class="flex items-center gap-2 bg-emerald-900/40 border border-emerald-700/50 rounded-xl px-3 py-2">
+              <span class="text-emerald-300 text-xs font-medium">Periode:</span>
+              <select id="students-period-filter" class="bg-transparent text-white text-xs focus:outline-none cursor-pointer">
+               <option value="all">Semua Periode</option>
+              </select>
+             </div>
+             <div class="flex items-center gap-2 bg-emerald-900/40 border border-emerald-700/50 rounded-xl px-3 py-2">
+              <span class="text-emerald-300 text-xs font-medium">Tampilkan:</span>
+              <select id="students-entries" class="bg-transparent text-white text-xs focus:outline-none cursor-pointer">
+               <option value="10">10</option>
+               <option value="50">50</option>
+               <option value="100">100</option>
+               <option value="500">500</option>
+              </select>
+             </div>
+             <button id="add-student-btn" class="px-5 py-2 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 text-emerald-950 font-bold hover:from-gold-400 hover:to-gold-500 transition shadow-lg shadow-gold-500/25 flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              Tambah Siswa
+             </button>
+             <button id="students-refresh" class="p-2 rounded-xl border border-gold-500/50 text-gold-300 hover:bg-gold-500/10 transition" title="Refresh Data">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+             </button>
+            </div>
+           </div>
+
+           <div class="card-shine bg-emerald-900/30 rounded-2xl border border-emerald-700/40 overflow-hidden">
+            <div class="overflow-auto">
+             <table class="min-w-full text-sm">
+              <thead class="bg-emerald-950/40 text-emerald-200">
+               <tr>
+                <th class="px-4 py-4 text-left font-semibold w-12">#</th>
+                <th class="px-4 py-4 text-left font-semibold">Nama Siswa</th>
+                <th class="px-4 py-4 text-left font-semibold">Kelas / Juz</th>
+                <th class="px-4 py-4 text-center font-semibold">Status Kelulusan</th>
+                <th class="px-4 py-4 text-right font-semibold">Aksi</th>
+               </tr>
+              </thead>
+              <tbody id="students-table-body" class="divide-y divide-emerald-700/40 bg-emerald-900/10">
+               <!-- Data will be rendered here -->
+              </tbody>
+             </table>
+            </div>
+            <div id="students-empty" class="hidden py-12 text-center text-emerald-200/50">
+             Belum ada data siswa.
+            </div>
+           </div>
+          </div>
+
+          <div id="operator-tab-schedule" class="operator-tab hidden">
+           <h3 class="text-xl font-bold text-white mb-2">Kelola Jadwal</h3>
+           <p class="text-emerald-200/70 text-sm mb-6">Data di sini akan mengganti tampilan jadwal publik.</p>
+           <form id="schedule-form" class="card-shine bg-emerald-900/30 rounded-2xl p-6 border border-emerald-700/40 mb-6">
+            <input type="hidden" id="schedule-id">
+            <div class="grid md:grid-cols-2 gap-4">
+             <div>
+              <label class="block text-emerald-200 mb-2 font-medium" for="schedule-date">Hari & Tanggal</label>
+              <input id="schedule-date" type="date" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none" required>
+             </div>
+             <div>
+              <label class="block text-emerald-200 mb-2 font-medium" for="schedule-time">Waktu</label>
+              <input id="schedule-time" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none" placeholder="Contoh: 08:00 - 10:00" required>
+             </div>
+             <div>
+              <label class="block text-emerald-200 mb-2 font-medium" for="schedule-teacher">Guru Pentasmi</label>
+              <select id="schedule-teacher" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none" required>
+                <option value="">Pilih Pentasmi</option>
+              </select>
+             </div>
+             <div>
+              <label class="block text-emerald-200 mb-2 font-medium" for="schedule-student">Pilih Siswa</label>
+              <select id="schedule-student" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none" required>
+               <option value="">Pilih Siswa</option>
+              </select>
+             </div>
+             <div class="md:col-span-2">
+              <label class="block text-emerald-200 mb-2 font-medium" for="schedule-location">Lokasi Tasmi</label>
+              <input id="schedule-location" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none" placeholder="Contoh: Masjid Lantai 1" required>
+             </div>
+            </div>
+            <div class="flex gap-3 mt-5">
+             <button type="submit" class="px-5 py-3 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 text-emerald-950 font-semibold hover:from-gold-400 hover:to-gold-500 transition">Simpan Jadwal</button>
+             <button type="button" id="schedule-reset" class="px-5 py-3 rounded-xl border border-emerald-700/60 text-emerald-100 hover:border-gold-500/40 transition">Reset</button>
+            </div>
+           </form>
+           <div id="schedule-list" class="space-y-3"></div>
+          </div>
+
+          <div id="operator-tab-graduation" class="operator-tab hidden">
+           <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+            <div>
+             <h3 class="text-xl font-bold text-white">Penentuan Kelulusan Tasmi</h3>
+             <p class="text-emerald-200/70 text-sm mt-1">Tentukan kelulusan siswa untuk jadwal tasmi yang telah selesai.</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+             <div class="flex items-center gap-2 bg-emerald-900/40 border border-emerald-700/50 rounded-xl px-3 py-2 mr-2">
+              <span class="text-emerald-300 text-xs font-medium">Periode:</span>
+              <select id="graduation-period-filter" class="bg-transparent text-white text-xs focus:outline-none cursor-pointer">
+               <option value="all">Semua Periode</option>
+              </select>
+             </div>
+             <button id="add-manual-grad-btn" class="px-5 py-2 rounded-xl border border-gold-500/50 text-gold-300 hover:bg-gold-500/10 transition font-semibold">Luluskan Siswa Lama</button>
+             <button id="announce-graduation-btn" class="px-5 py-2 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 text-emerald-950 font-bold hover:from-gold-400 hover:to-gold-500 transition shadow-lg shadow-gold-500/20">Umumkan Hasil Kolektif</button>
+            </div>
+           </div>
+           <div class="overflow-auto rounded-xl border border-emerald-700/50">
+            <table class="min-w-full text-sm">
+             <thead class="bg-emerald-950/40 text-emerald-200">
+              <tr>
+               <th class="text-left px-4 py-3">Tanggal</th>
+               <th class="text-left px-4 py-3">Siswa</th>
+               <th class="text-left px-4 py-3">Pentasmi</th>
+               <th class="text-left px-4 py-3">Status</th>
+               <th class="text-right px-4 py-3">Aksi</th>
+              </tr>
+             </thead>
+             <tbody id="graduation-table" class="divide-y divide-emerald-700/40 bg-emerald-900/20"></tbody>
+            </table>
+           </div>
+          </div>
+
+          <div id="operator-tab-pentasmi" class="operator-tab hidden">
+           <h3 class="text-xl font-bold text-white mb-2">Kelola Akun Pentasmi</h3>
+           <p class="text-emerald-200/70 text-sm mb-6">Buat dan kelola akun khusus untuk para penguji (Pentasmi).</p>
+           
+           <div class="grid lg:grid-cols-2 gap-6">
+            <form id="pentasmi-account-form" class="card-shine bg-emerald-900/30 rounded-2xl p-6 border border-emerald-700/40">
+             <input type="hidden" id="pentasmi-id">
+             <div class="space-y-4">
+              <div>
+               <label class="block text-emerald-200 mb-2 font-medium" for="pentasmi-username">Username</label>
+               <input id="pentasmi-username" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none" placeholder="Username untuk login" required>
+              </div>
+              <div>
+               <label class="block text-emerald-200 mb-2 font-medium" for="pentasmi-password-acc">Password</label>
+               <input id="pentasmi-password-acc" type="password" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none" placeholder="Password minimal 6 karakter" required>
+              </div>
+              <div>
+               <label class="block text-emerald-200 mb-2 font-medium" for="pentasmi-name-acc">Nama Lengkap Pentasmi</label>
+               <input id="pentasmi-name-acc" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none" placeholder="Contoh: Ustadz Ahmad" required>
+              </div>
+             </div>
+             <div class="flex gap-3 mt-6">
+              <button type="submit" class="px-5 py-3 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 text-emerald-950 font-semibold hover:from-gold-400 hover:to-gold-500 transition">Simpan Akun</button>
+              <button type="button" id="pentasmi-reset" class="px-5 py-3 rounded-xl border border-emerald-700/60 text-emerald-100 hover:border-gold-500/40 transition">Reset</button>
+             </div>
+            </form>
+
+            <div class="card-shine bg-emerald-900/30 rounded-2xl p-6 border border-emerald-700/40">
+             <h4 class="text-white font-semibold mb-4">Daftar Akun Pentasmi</h4>
+             <div id="pentasmi-list" class="space-y-3"></div>
+            </div>
+           </div>
+          </div>
+
+          <div id="operator-tab-announcements" class="operator-tab hidden">
+           <h3 class="text-xl font-bold text-white mb-2">Kelola Pengumuman</h3>
+           <p class="text-emerald-200/70 text-sm mb-6">Data di sini akan mengganti pengumuman publik.</p>
+           <form id="ann-form" class="card-shine bg-emerald-900/30 rounded-2xl p-6 border border-emerald-700/40 mb-6">
+            <input type="hidden" id="ann-id">
+            <div class="grid md:grid-cols-2 gap-4">
+             <div class="md:col-span-2">
+              <label class="block text-emerald-200 mb-2 font-medium" for="ann-title">Judul</label>
+              <input id="ann-title" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none" required>
+             </div>
+             <div>
+              <label class="block text-emerald-200 mb-2 font-medium" for="ann-tag">Tag</label>
+              <select id="ann-tag" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none">
+               <option value="Info">Info</option>
+               <option value="Penting">Penting</option>
+               <option value="Kegiatan">Kegiatan</option>
+              </select>
+             </div>
+             <div>
+              <label class="block text-emerald-200 mb-2 font-medium" for="ann-date">Tanggal</label>
+              <input id="ann-date" type="date" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none" required>
+             </div>
+             <div class="md:col-span-2">
+              <label class="block text-emerald-200 mb-2 font-medium" for="ann-body">Isi</label>
+              <textarea id="ann-body" rows="4" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none resize-none" required></textarea>
+             </div>
+            </div>
+            <div class="flex gap-3 mt-5">
+             <button type="submit" class="px-5 py-3 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 text-emerald-950 font-semibold hover:from-gold-400 hover:to-gold-500 transition">Simpan</button>
+             <button type="button" id="ann-reset" class="px-5 py-3 rounded-xl border border-emerald-700/60 text-emerald-100 hover:border-gold-500/40 transition">Reset</button>
+            </div>
+           </form>
+           <div id="ann-list" class="space-y-3"></div>
+          </div>
+
+          <div id="operator-tab-certificates" class="operator-tab hidden">
+           <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div>
+             <h3 class="text-xl font-bold text-white mb-2">Upload Sertifikat</h3>
+             <p class="text-emerald-200/70 text-sm">Unggah sertifikat untuk siswa yang telah lulus tasmi.</p>
+            </div>
+            <div class="relative max-w-sm w-full">
+             <input type="text" id="cert-search" class="w-full pl-10 pr-4 py-2.5 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white placeholder-emerald-500 focus:border-gold-500 focus:outline-none" placeholder="Cari nama siswa...">
+             <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </div>
+           </div>
+           <div class="overflow-auto rounded-xl border border-emerald-700/50">
+            <table class="min-w-full text-sm">
+             <thead class="bg-emerald-950/40 text-emerald-200">
+              <tr>
+               <th class="text-left px-4 py-3">Nama Siswa</th>
+               <th class="text-left px-4 py-3">Kelas / Juz</th>
+               <th class="text-left px-4 py-3">Sertifikat</th>
+               <th class="text-right px-4 py-3">Aksi</th>
+              </tr>
+             </thead>
+             <tbody id="certificate-table" class="divide-y divide-emerald-700/40 bg-emerald-900/20"></tbody>
+            </table>
+           </div>
+           <input type="file" id="certificate-upload-input" class="hidden" accept="image/*">
+           <input type="file" id="tasmi-result-upload-input" class="hidden" accept="image/*">
+          </div>
+
+          <div id="operator-tab-congratulations" class="operator-tab hidden">
+           <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div>
+             <h3 class="text-xl font-bold text-white mb-2">Ucapan Selamat</h3>
+             <p class="text-emerald-200/70 text-sm">Unggah gambar ucapan selamat (flyer/foto) untuk ditampilkan pada hasil tasmi siswa.</p>
+            </div>
+            <div class="relative max-w-sm w-full">
+             <input type="text" id="congrats-search" class="w-full pl-10 pr-4 py-2.5 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white placeholder-emerald-500 focus:border-gold-500 focus:outline-none" placeholder="Cari nama siswa...">
+             <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </div>
+           </div>
+           <div class="overflow-auto rounded-xl border border-emerald-700/50">
+            <table class="min-w-full text-sm">
+             <thead class="bg-emerald-950/40 text-emerald-200">
+              <tr>
+               <th class="text-left px-4 py-3">Nama Siswa</th>
+               <th class="text-left px-4 py-3">Kelas / Juz</th>
+               <th class="text-left px-4 py-3">Gambar Ucapan</th>
+               <th class="text-right px-4 py-3">Aksi</th>
+              </tr>
+             </thead>
+             <tbody id="congratulations-table" class="divide-y divide-emerald-700/40 bg-emerald-900/20"></tbody>
+            </table>
+           </div>
+           <input type="file" id="congrats-upload-input" class="hidden" accept="image/*">
+          </div>
+
+          <div id="operator-tab-sync" class="operator-tab hidden">
+           <h3 class="text-xl font-bold text-white mb-2">Sinkronisasi</h3>
+           <p class="text-emerald-200/70 text-sm mb-6">Export / import semua data (pendaftaran, siswa, jadwal, pengumuman, pengaturan).</p>
+
+           <div class="grid md:grid-cols-2 gap-6">
+            <div class="card-shine bg-emerald-900/30 rounded-2xl p-6 border border-emerald-700/40">
+             <h4 class="text-white font-semibold mb-2">Export Data</h4>
+             <p class="text-emerald-200/70 text-sm mb-4">Unduh data website untuk backup atau diolah di aplikasi lain.</p>
+             <div class="flex flex-col gap-3">
+              <button id="sync-export" class="px-5 py-3 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 text-emerald-950 font-semibold hover:from-gold-400 hover:to-gold-500 transition flex items-center justify-center gap-2">
+               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+               Download Backup (JSON)
+              </button>
+              <button id="sync-export-excel" class="px-5 py-3 rounded-xl border border-green-500/50 text-green-400 font-semibold hover:bg-green-500/10 transition flex items-center justify-center gap-2">
+               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a2 2 0 012-2h2a2 2 0 012 2v2m-6-12h8m-8 4h8m-8 4h8m-8 4h8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+               Download Data (Excel)
+              </button>
+             </div>
+            </div>
+            <div class="card-shine bg-emerald-900/30 rounded-2xl p-6 border border-emerald-700/40">
+             <h4 class="text-white font-semibold mb-2">Import Data</h4>
+             <p class="text-emerald-200/70 text-sm mb-4">Upload file backup (JSON) atau data Excel (.xlsx) untuk memulihkan data.</p>
+             
+             <div class="space-y-4">
+              <div>
+               <label class="block text-emerald-300 text-xs mb-1">Import dari JSON</label>
+               <input id="sync-import-file" type="file" accept="application/json" class="block w-full text-emerald-100 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-emerald-900/60 file:text-emerald-100 hover:file:bg-emerald-900">
+               <button id="sync-import" class="mt-2 w-full px-5 py-2.5 rounded-xl border border-gold-500/50 text-gold-300 hover:bg-gold-500/10 transition">Import JSON</button>
+              </div>
+
+              <div class="pt-4 border-t border-emerald-700/30">
+               <label class="block text-emerald-300 text-xs mb-1">Import dari Excel (.xlsx)</label>
+               <input id="sync-import-excel-file" type="file" accept=".xlsx, .xls" class="block w-full text-emerald-100 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-emerald-900/60 file:text-emerald-100 hover:file:bg-emerald-900">
+               <button id="sync-import-excel" class="mt-2 w-full px-5 py-2.5 rounded-xl border border-green-500/50 text-green-400 hover:bg-green-500/10 transition">Import Excel</button>
+              </div>
+             </div>
+             
+             <button id="sync-reset-all" class="mt-6 w-full px-5 py-3 rounded-xl border border-red-500/50 text-red-300 hover:bg-red-500/10 transition">Reset Semua Data Lokal</button>
+             
+             <div class="mt-8 pt-6 border-t border-emerald-700/50">
+               <h4 class="text-white font-semibold mb-2 text-center">Tindakan Cepat</h4>
+               <button onclick="syncAllStudentsToGraduation()" class="w-full px-5 py-3 rounded-xl bg-emerald-800 text-emerald-100 font-bold hover:bg-emerald-700 border border-emerald-600 transition flex items-center justify-center gap-2">
+                 <svg class="w-5 h-5 text-gold-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                 Sinkronisasi Data Siswa ke Kelulusan
+               </button>
+               <p class="text-emerald-200/50 text-[10px] mt-2 text-center italic">Gunakan ini jika ada siswa yang belum muncul di daftar Kelola Kelulusan.</p>
+             </div>
+            </div>
+           </div>
+
+           <div class="mt-6 card-shine bg-emerald-900/30 rounded-2xl p-6 border border-emerald-700/40">
+            <h4 class="text-white font-semibold mb-3">Akun Operator</h4>
+            <form id="operator-credentials-form" class="grid md:grid-cols-3 gap-4">
+             <div>
+              <label class="block text-emerald-200 mb-2 font-medium" for="op-user-new">Username</label>
+              <input id="op-user-new" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none" required>
+             </div>
+             <div>
+              <label class="block text-emerald-200 mb-2 font-medium" for="op-pass-new">Password Baru</label>
+              <input id="op-pass-new" type="password" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none" required>
+             </div>
+             <div class="flex items-end">
+              <button class="w-full px-5 py-3 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 text-emerald-950 font-semibold hover:from-gold-400 hover:to-gold-500 transition">Simpan Akun</button>
+             </div>
+            </form>
+           </div>
+          </div>
+         </div>
+        </div>
+       </div>
+      </div>
+     </div>
+    </section>
+
+    <section id="page-login-pentasmi" class="page-section hidden">
+     <div class="min-h-[600px] flex items-center justify-center py-16 px-4">
+      <div class="w-full max-w-md">
+       <div class="card-shine bg-emerald-800/30 backdrop-blur-sm rounded-2xl p-8 border border-gold-500/20">
+        <div class="text-center mb-8">
+         <div class="w-20 h-20 bg-gradient-to-br from-gold-400 to-gold-600 rounded-full flex items-center justify-center mx-auto mb-4"><span class="text-emerald-950 font-amiri font-bold text-3xl">ح</span>
+         </div>
+         <h2 class="text-2xl font-bold text-white">Login Pentasmi</h2>
+         <p class="text-emerald-200/70 mt-2">Portal santri penghafal Al-Quran</p>
+        </div>
+        <div class="p-4 bg-emerald-900/50 rounded-xl border border-emerald-700/50 mb-6">
+         <p class="text-emerald-300 text-sm text-center">Silakan masukkan username dan password yang telah diberikan oleh Admin.</p>
+        </div>
+        <form id="pentasmi-login-actual-form" class="space-y-6">
+         <div><label for="pentasmi-login-username" class="block text-emerald-200 mb-2 font-medium">Username</label> <input type="text" id="pentasmi-login-username" class="input-field w-full px-4 py-3 bg-emerald-900/50 border border-emerald-700 rounded-xl text-white placeholder-emerald-500 focus:border-gold-500 focus:outline-none" placeholder="Masukkan username">
+         </div>
+         <div><label for="pentasmi-login-password" class="block text-emerald-200 mb-2 font-medium">Password</label>
+          <div class="relative"><input type="password" id="pentasmi-login-password" class="input-field w-full px-4 py-3 bg-emerald-900/50 border border-emerald-700 rounded-xl text-white placeholder-emerald-500 focus:border-gold-500 focus:outline-none pr-12" placeholder="••••••••"> <button type="button" onclick="togglePassword('pentasmi-login-password', this)" class="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-400 hover:text-gold-400">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg></button>
+          </div>
+         </div><button type="submit" class="w-full py-3 bg-gradient-to-r from-gold-500 to-gold-600 text-emerald-950 font-bold rounded-xl hover:from-gold-400 hover:to-gold-500 transition-all"> Masuk </button>
+        </form>
+        <div class="mt-6 text-center">
+         <p class="text-emerald-200/70 text-sm">Belum punya akun? <button onclick="navigateTo('pendaftaran')" class="text-gold-400 hover:text-gold-300 font-medium">Daftar Sekarang</button></p>
+        </div>
+       </div>
+      </div>
+     </div>
+    </section>
+   </main>
+
+   <footer class="bg-emerald-950 border-t border-gold-500/20 py-12 px-4">
+    <div class="max-w-6xl mx-auto">
+     <div class="grid md:grid-cols-3 gap-8 mb-8">
+      <div>
+       <div class="flex items-center space-x-3 mb-4">
+        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center"><span class="text-emerald-950 font-amiri font-bold text-xl">ت</span>
+        </div>
+        <h3 id="footer-title-content" class="text-gold-400 font-amiri font-bold text-xl">Tasmi' Al-Quran</h3>
+       </div>
+       <p id="footer-description" class="text-emerald-200/70 text-sm">Program hafalan Al-Quran yang dibimbingan oleh ustadz dan ustadzah berpengalaman</p>
+      </div>
+      <div>
+       <h4 class="text-gold-400 font-bold mb-4">Menu</h4>
+       <ul class="space-y-2">
+        <li><a href="#beranda" data-page="beranda" class="footer-nav-link text-emerald-200/70 hover:text-gold-400 transition-colors">Beranda</a></li>
+        <li><a href="#pendaftaran" data-page="pendaftaran" class="footer-nav-link text-emerald-200/70 hover:text-gold-400 transition-colors">Pendaftaran</a></li>
+        <li><a href="#jadwal" data-page="jadwal" class="footer-nav-link text-emerald-200/70 hover:text-gold-400 transition-colors">Jadwal</a></li>
+        <li><a href="#pengumuman" data-page="pengumuman" class="footer-nav-link text-emerald-200/70 hover:text-gold-400 transition-colors">Pengumuman</a></li>
+       </ul>
+      </div>
+      <div>
+       <h4 class="text-gold-400 font-bold mb-4">Kontak</h4>
+       <p id="footer-contact" class="text-emerald-200/70 text-sm">+62 812-3456-7890 | info@tasmi-alquran.com</p>
+      </div>
+     </div>
+     <div class="geometric-border w-full mb-8"></div>
+     <p id="footer-text" class="text-center text-emerald-200/50 text-sm">© 2025 Tasmi' Al-Quran. Hak Cipta Dilindungi.</p>
+    </div>
+   </footer>
+
+   <div id="toast" class="toast"></div>
+
+   <!-- Modal for Viewing Documents -->
+   <div id="file-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 bg-emerald-950/90 backdrop-blur-sm">
+    <div class="relative max-w-4xl w-full bg-emerald-900 border border-gold-500/30 rounded-2xl overflow-hidden shadow-2xl animate-fade-in">
+     <div class="flex items-center justify-between p-4 border-b border-emerald-700/50">
+      <h3 class="text-lg font-bold text-white">Pratinjau Berkas</h3>
+      <div class="flex items-center gap-2">
+       <button id="modal-download-btn" class="hidden px-4 py-2 rounded-xl bg-gold-500 text-emerald-950 font-bold hover:bg-gold-400 transition flex items-center gap-2 text-sm">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+        Unduh
+       </button>
+       <button onclick="closeFileModal()" class="text-emerald-300 hover:text-gold-400 transition p-2">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg></button>
+      </div>
+     </div>
+     <div class="p-4 max-h-[80vh] overflow-auto flex items-center justify-center bg-emerald-950/50">
+      <img id="file-modal-img" src="" class="max-w-full h-auto rounded-lg shadow-lg" alt="Berkas">
+      <div id="file-modal-empty" class="hidden text-emerald-200/50 py-20">Tidak ada berkas yang diunggah.</div>
+     </div>
+    </div>
+   </div>
+
+   <!-- Manual Graduation Modal -->
+   <div id="manual-grad-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center p-4 bg-emerald-950/90 backdrop-blur-sm">
+    <div class="relative max-w-lg w-full bg-gradient-to-b from-emerald-800 to-emerald-900 border border-gold-500/30 rounded-2xl shadow-2xl animate-fade-in scale-95 transition-transform duration-300" id="manual-grad-modal-dialog">
+     <div class="p-6">
+      <div class="flex items-center justify-between mb-6">
+       <h3 class="text-xl font-bold text-white">Luluskan Siswa Lama</h3>
+       <button id="manual-grad-modal-close" class="text-emerald-300 hover:text-gold-400 transition p-1">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+       </button>
+      </div>
+      <form id="manual-grad-form" class="space-y-4">
+       <div>
+        <label class="block text-emerald-200 mb-2 font-medium">Pilih Siswa <span class="text-red-400">*</span></label>
+        <select id="manual-grad-student" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none" required>
+         <option value="">Pilih Siswa</option>
+        </select>
+       </div>
+       <div class="grid grid-cols-2 gap-4">
+        <div>
+         <label class="block text-emerald-200 mb-2 font-medium">Juz <span class="text-red-400">*</span></label>
+         <input id="manual-grad-juz" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none" placeholder="Contoh: 30" required>
+        </div>
+        <div>
+         <label class="block text-emerald-200 mb-2 font-medium">Tanggal Lulus <span class="text-red-400">*</span></label>
+         <input id="manual-grad-date" type="date" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none" required>
+        </div>
+       </div>
+       <div class="flex gap-3 pt-4">
+        <button type="button" id="manual-grad-modal-cancel" class="flex-1 px-5 py-3 rounded-xl border border-emerald-700 text-emerald-100 font-semibold hover:bg-emerald-700/50 transition">Batal</button>
+        <button type="submit" class="flex-1 px-5 py-3 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 text-emerald-950 font-bold hover:from-gold-400 hover:to-gold-500 transition shadow-lg shadow-gold-500/20">Luluskan Siswa</button>
+       </div>
+      </form>
+     </div>
+    </div>
+   </div>
+
+   <!-- Student Modal -->
+   <div id="student-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center p-4 bg-emerald-950/90 backdrop-blur-sm">
+    <div class="relative max-w-lg w-full bg-gradient-to-b from-emerald-800 to-emerald-900 border border-gold-500/30 rounded-2xl shadow-2xl animate-fade-in scale-95 transition-transform duration-300" id="student-modal-dialog">
+     <div class="p-6">
+      <div class="flex items-center justify-between mb-6">
+       <h3 id="student-modal-title" class="text-xl font-bold text-white">Tambah Siswa</h3>
+       <button id="student-modal-close" class="text-emerald-300 hover:text-gold-400 transition p-1">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+       </button>
+      </div>
+      <form id="students-form" class="space-y-4">
+       <input type="hidden" id="student-id">
+       <div>
+        <label class="block text-emerald-200 mb-2 font-medium" for="student-name">Nama Siswa <span class="text-red-400">*</span></label>
+        <input id="student-name" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none" placeholder="Nama lengkap siswa" required>
+       </div>
+       <div class="grid grid-cols-2 gap-4">
+        <div>
+         <label class="block text-emerald-200 mb-2 font-medium" for="student-class">Kelas</label>
+         <input id="student-class" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none" placeholder="Contoh: 7A">
+        </div>
+        <div>
+         <label class="block text-emerald-200 mb-2 font-medium" for="student-juz">Juz</label>
+         <input id="student-juz" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none" placeholder="Contoh: 30">
+        </div>
+       </div>
+       <div>
+        <label class="block text-emerald-200 mb-2 font-medium" for="student-period">Periode / Tahun Ajaran</label>
+        <input id="student-period" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none" placeholder="Contoh: 2024/2025 Genap">
+       </div>
+       <div>
+        <label class="block text-emerald-200 mb-2 font-medium" for="student-notes">Catatan</label>
+        <textarea id="student-notes" rows="3" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none resize-none" placeholder="Catatan tambahan..."></textarea>
+       </div>
+       <div class="border-t border-emerald-700/30 pt-4">
+        <label class="block text-emerald-200 mb-2 font-medium">Foto Profil Siswa</label>
+        <div class="flex items-center gap-4">
+          <div id="student-photo-preview-container" class="w-16 h-16 rounded-full border-2 border-gold-500/30 overflow-hidden bg-emerald-950/50 flex items-center justify-center">
+            <svg id="student-photo-placeholder" class="w-8 h-8 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            <img id="student-photo-preview-img" src="" class="hidden w-full h-full object-cover">
+          </div>
+          <div class="flex-1">
+            <input type="file" id="student-photo-input" class="hidden" accept="image/*">
+            <button type="button" onclick="document.getElementById('student-photo-input').click()" class="px-4 py-2 rounded-xl border border-gold-500/40 text-gold-300 text-xs hover:bg-gold-500/10 transition">Pilih Foto</button>
+            <p class="text-[10px] text-emerald-400/60 mt-1">Format JPG/PNG, maks 2MB.</p>
+          </div>
+        </div>
+       </div>
+       <div class="flex gap-3 pt-4">
+        <button type="button" id="student-modal-cancel" class="flex-1 px-5 py-3 rounded-xl border border-emerald-700 text-emerald-100 font-semibold hover:bg-emerald-700/50 transition">Batal</button>
+        <button type="submit" class="flex-1 px-5 py-3 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 text-emerald-950 font-bold hover:from-gold-400 hover:to-gold-500 transition shadow-lg shadow-gold-500/20">Simpan Data</button>
+       </div>
+      </form>
+     </div>
+    </div>
+   </div>
+
+   <!-- Confirmation Modal -->
+   <div id="confirm-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center p-4 bg-emerald-950/90 backdrop-blur-sm">
+    <div class="relative max-w-md w-full bg-gradient-to-b from-emerald-800 to-emerald-900 border border-gold-500/30 rounded-2xl shadow-2xl animate-fade-in scale-95 transition-transform duration-300" id="confirm-modal-dialog">
+     <div class="p-6 text-center">
+      <div id="confirm-modal-icon" class="w-16 h-16 rounded-full bg-red-500/20 border-2 border-red-500/50 flex items-center justify-center mx-auto mb-4">
+       <svg class="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+      </div>
+      <h3 id="confirm-modal-title" class="text-xl font-bold text-white mb-2">Hapus Data</h3>
+      <p id="confirm-modal-body" class="text-emerald-200/80 mb-8">Apakah Anda yakin ingin menghapus data ini? Tindakan ini tidak dapat dibatalkan.</p>
+      <div class="flex justify-center gap-4">
+       <button id="confirm-modal-cancel" class="px-8 py-3 rounded-xl border border-emerald-600 text-emerald-100 font-semibold hover:bg-emerald-700/50 transition">Batal</button>
+       <button id="confirm-modal-confirm" class="px-8 py-3 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 transition">Ya, Hapus</button>
+      </div>
+     </div>
+    </div>
+   </div>
+
+   <!-- Certificate Link Modal -->
+   <div id="cert-link-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center p-4 bg-emerald-950/90 backdrop-blur-sm">
+    <div class="relative max-w-md w-full bg-gradient-to-b from-emerald-800 to-emerald-900 border border-gold-500/30 rounded-2xl shadow-2xl animate-fade-in scale-95 transition-transform duration-300" id="cert-link-modal-dialog">
+     <div class="p-6">
+      <h3 class="text-xl font-bold text-white mb-2">Link Sertifikat</h3>
+      <p class="text-emerald-200/70 text-sm mb-4">Masukkan link Google Drive atau link lainnya untuk sertifikat siswa ini.</p>
+      <input type="hidden" id="cert-link-student-id">
+      <input type="url" id="cert-link-input" class="w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none mb-6" placeholder="https://drive.google.com/...">
+      <div class="flex gap-3">
+       <button id="cert-link-cancel" class="flex-1 px-5 py-3 rounded-xl border border-emerald-700 text-emerald-100 font-semibold hover:bg-emerald-700/50 transition">Batal</button>
+       <button id="cert-link-save" class="flex-1 px-5 py-3 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 text-emerald-950 font-bold hover:from-gold-400 hover:to-gold-500 transition shadow-lg shadow-gold-500/20">Simpan Link</button>
+      </div>
+     </div>
+    </div>
+   </div>
+
+   <!-- Graduation Detail Modal -->
+   <div id="graduation-detail-modal" class="hidden fixed inset-0 z-[80] flex items-center justify-center p-4 bg-emerald-950/95 backdrop-blur-md overflow-hidden">
+    <div class="relative max-w-lg w-full max-h-full flex flex-col bg-emerald-900 border border-gold-500/30 rounded-3xl shadow-2xl animate-fade-in">
+     <div class="absolute top-4 right-4 z-20">
+      <button onclick="document.getElementById('graduation-detail-modal').classList.add('hidden'); document.body.classList.remove('overflow-hidden');" class="text-emerald-300 hover:text-gold-400 transition p-2 bg-emerald-950/50 rounded-full">
+       <svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+      </button>
+     </div>
+     <div class="overflow-y-auto p-8 pt-10 custom-scrollbar">
+      <div class="text-center mb-8">
+       <div id="grad-modal-profile-img-container" class="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-gold-500/30 overflow-hidden hidden shadow-xl">
+         <img id="grad-modal-profile-img" src="" class="w-full h-full object-cover">
+       </div>
+       <div id="grad-modal-icon" class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 border-2">
+        <svg id="grad-modal-svg" class="w-10 h-10" fill="none" stroke="currentColor" viewbox="0 0 24 24"></svg>
+       </div>
+       <h3 id="grad-modal-name" class="text-2xl font-bold text-white mb-1"></h3>
+       <p id="grad-modal-status" class="text-lg font-semibold uppercase tracking-widest"></p>
+      </div>
+
+      <div id="grad-modal-congrats-container" class="mb-6 hidden">
+        <div class="rounded-2xl overflow-hidden border border-gold-500/20 bg-emerald-950/40 p-1">
+          <img id="grad-modal-congrats-img" src="" class="w-full h-auto rounded-xl" alt="Ucapan Selamat">
+        </div>
+      </div>
+      
+      <div class="space-y-4">
+       <div class="flex justify-between p-4 rounded-2xl bg-emerald-950/40 border border-emerald-700/30">
+        <span class="text-emerald-400">Juz yang Ditasmi</span>
+        <span id="grad-modal-juz" class="text-white font-bold"></span>
+       </div>
+       <div class="flex justify-between p-4 rounded-2xl bg-emerald-950/40 border border-emerald-700/30">
+        <span class="text-emerald-400">Tanggal Pengumuman</span>
+        <span id="grad-modal-date" class="text-white"></span>
+       </div>
+       <div class="p-6 rounded-2xl bg-emerald-800/20 border border-emerald-700/30">
+        <p class="text-gold-400 text-xs font-bold mb-3 uppercase tracking-widest">Pesan Motivasi:</p>
+        <p id="grad-modal-motivation" class="text-emerald-100 italic leading-relaxed"></p>
+       </div>
+      </div>
+
+      <div id="grad-modal-cert-container" class="mt-8 hidden">
+       <button id="grad-modal-cert-btn" class="w-full py-4 bg-gradient-to-r from-gold-500 to-gold-600 text-emerald-950 font-bold rounded-2xl hover:from-gold-400 hover:to-gold-500 transform hover:scale-[1.02] transition-all shadow-lg shadow-gold-500/20 flex items-center justify-center gap-3">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+        Lihat Sertifikat
+       </button>
+      </div>
+     </div>
+    </div>
+   </div>
+  </div>
+
+  <script src="js/main.js"></script>
+
+  </body>
+</html>
