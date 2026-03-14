@@ -99,6 +99,18 @@
       background: linear-gradient(135deg, #dc2626, #b91c1c);
     }
 
+    /* Fix select dropdown visibility */
+    select option {
+      background-color: #064e3b; /* emerald-950 */
+      color: white;
+    }
+
+    /* Additional styling for transparent selects in operator panel */
+    select.bg-transparent option {
+      background-color: #064e3b;
+      color: white;
+    }
+
     .modal-backdrop {
       position: fixed;
       inset: 0;
