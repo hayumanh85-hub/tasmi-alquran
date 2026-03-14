@@ -558,7 +558,14 @@
       const pentasmiList = pentasmiGetAll();
       const pentasmi = pentasmiList.find(p => p.username === username && p.password === password);
       if (pentasmi) {
-        lsSet(STORAGE_KEYS.operatorSession, { loggedIn: true, role: 'pentasmi', username: username, name: pentasmi.name, at: new Date().toISOString() });
+        lsSet(STORAGE_KEYS.operatorSession, { 
+          loggedIn: true, 
+          role: 'pentasmi', 
+          id: pentasmi.id,
+          username: username, 
+          name: pentasmi.name, 
+          at: new Date().toISOString() 
+        });
         return true;
       }
 
@@ -584,10 +591,16 @@
       if (subtitle && sess) {
         if (sess.role === 'pentasmi') {
           subtitle.textContent = `Panel Pentasmi - ${sess.name || sess.username}`;
-          document.querySelector('.operator-nav-btn[data-tab="schedule"]').textContent = 'Papan Jadwal';
+          const scheduleBtn = document.querySelector('.operator-nav-btn[data-tab="schedule"]');
+          if (scheduleBtn) scheduleBtn.textContent = 'Jadwal Tasmi Saya';
+          const gradBtn = document.querySelector('.operator-nav-btn[data-tab="graduation"]');
+          if (gradBtn) gradBtn.textContent = 'Input Kelulusan';
         } else {
           subtitle.textContent = `Panel Administrasi Utama (Operator)`;
-          document.querySelector('.operator-nav-btn[data-tab="schedule"]').textContent = 'Kelola Jadwal';
+          const scheduleBtn = document.querySelector('.operator-nav-btn[data-tab="schedule"]');
+          if (scheduleBtn) scheduleBtn.textContent = 'Kelola Jadwal';
+          const gradBtn = document.querySelector('.operator-nav-btn[data-tab="graduation"]');
+          if (gradBtn) gradBtn.textContent = 'Penentuan Kelulusan Tasmi';
         }
       }
     }
@@ -596,7 +609,7 @@
       const role = getLoggedInRole();
       
       // If pentasmi tries to access unauthorized tab, redirect to graduation
-      if (role === 'pentasmi' && !['graduation', 'schedule'].includes(tab)) {
+      if (role === 'pentasmi' && !['graduation', 'schedule', 'pentasmi-history', 'pentasmi-password'].includes(tab)) {
         tab = 'graduation';
       }
 
@@ -612,22 +625,25 @@
 
       // Role-based visibility
       if (role === 'pentasmi') {
-        const allowed = ['graduation', 'schedule', 'certificates', 'pentasmi-history', 'pentasmi-password'];
+        const allowed = ['graduation', 'schedule', 'pentasmi-history', 'pentasmi-password'];
         document.querySelectorAll('.operator-nav-btn').forEach(btn => {
           if (!allowed.includes(btn.dataset.tab)) btn.classList.add('hidden');
           else btn.classList.remove('hidden');
         });
-        // Special case for announce button
+        // Special case for buttons in graduation tab
         const annBtn = document.getElementById('announce-graduation-btn');
         if (annBtn) annBtn.classList.add('hidden');
+        const manualBtn = document.getElementById('add-manual-grad-btn');
+        if (manualBtn) manualBtn.classList.add('hidden');
       } else {
-        // Operator can see everything except pentasmi-only tabs if any (currently operator sees all)
         document.querySelectorAll('.operator-nav-btn').forEach(btn => {
           if (['pentasmi-history', 'pentasmi-password'].includes(btn.dataset.tab)) btn.classList.add('hidden');
           else btn.classList.remove('hidden');
         });
         const annBtn = document.getElementById('announce-graduation-btn');
         if (annBtn) annBtn.classList.remove('hidden');
+        const manualBtn = document.getElementById('add-manual-grad-btn');
+        if (manualBtn) manualBtn.classList.remove('hidden');
       }
 
       updateOperatorPanelUI();
@@ -1588,6 +1604,13 @@
         return student && student.graduationStatus !== 'Lulus';
       });
 
+      if (role === 'pentasmi') {
+        const sess = lsGet(STORAGE_KEYS.operatorSession);
+        if (sess?.id) {
+          list = list.filter(it => it.teacherId === sess.id);
+        }
+      }
+
       if (searchTerm) {
         list = list.filter(it => {
           const student = (students || []).find(s => s.id === it.studentId);
@@ -1719,6 +1742,13 @@
 
       const role = getLoggedInRole();
       
+      if (role === 'pentasmi') {
+        const sess = lsGet(STORAGE_KEYS.operatorSession);
+        if (sess?.id) {
+          list = list.filter(it => it.teacherId === sess.id);
+        }
+      }
+
       tbody.innerHTML = '';
       if (list.length === 0) {
         tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-emerald-200/70">Belum ada jadwal tasmi.</td></tr>`;
@@ -1730,9 +1760,7 @@
         const isRegisteredStudent = student && student.registrationId;
         
         let canDetermineGraduation = false;
-        if (role === 'admin') {
-          canDetermineGraduation = true;
-        } else if (role === 'pentasmi' && isRegisteredStudent) {
+        if (role === 'admin' || role === 'pentasmi') {
           canDetermineGraduation = true;
         }
 
@@ -1818,6 +1846,70 @@
             </td>
           </tr>
         `);
+      });
+
+      // Add event listeners for grad-action buttons
+      document.querySelectorAll('.grad-action').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.dataset.id;
+          const status = btn.dataset.status;
+          const action = btn.dataset.action;
+
+          if (status) {
+            try {
+              await window.dataSdk?.update?.('schedules', id, { graduationStatus: status });
+              showToast(`Status kelulusan berhasil diperbarui menjadi ${status}.`, 'success');
+              renderGraduationTable();
+              renderCertificateTable();
+            } catch (err) {
+              console.error('Update graduation error:', err);
+              showToast('Gagal memperbarui status kelulusan.', 'error');
+            }
+          } else if (action === 'upload-result') {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'image/*,application/pdf';
+            fileInput.onchange = async (e) => {
+              const file = e.target.files[0];
+              if (!file) return;
+              
+              try {
+                showToast('Sedang mengunggah lembar hasil...', 'info');
+                const fileUrl = await window.dataSdk?.uploadFile?.(file, `tasmi_sheets/${id}_${Date.now()}`);
+                await window.dataSdk?.update?.('schedules', id, { tasmiResultSheet: fileUrl });
+                showToast('Lembar hasil berhasil diunggah!', 'success');
+                renderGraduationTable();
+              } catch (err) {
+                console.error('Upload tasmi sheet error:', err);
+                showToast('Gagal mengunggah lembar hasil.', 'error');
+              }
+            };
+            fileInput.click();
+          } else if (action === 'view-result') {
+            const item = (schedules || []).find(it => it.id === id);
+            if (item?.tasmiResultSheet) {
+              window.open(item.tasmiResultSheet, '_blank');
+            }
+          } else if (action === 'delete') {
+            const confirmed = await showConfirmationModal({
+              title: 'Hapus Data?',
+              body: 'Anda yakin ingin menghapus data kelulusan ini? Tindakan ini tidak dapat dibatalkan.',
+              confirmText: 'Ya, Hapus'
+            });
+            if (confirmed) {
+              try {
+                await window.dataSdk?.delete?.('schedules', id);
+                showToast('Data berhasil dihapus.', 'success');
+                renderGraduationTable();
+              } catch (err) {
+                console.error('Delete graduation error:', err);
+                showToast('Gagal menghapus data.', 'error');
+              }
+            }
+          } else if (action === 'edit-period') {
+            openPeriodModal(id);
+          }
+        });
       });
     }
 
