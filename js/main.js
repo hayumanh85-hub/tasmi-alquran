@@ -40,6 +40,14 @@
     let announcements = [];
     let pentasmiAccounts = [];
     let studentsCurrentPage = 1;
+    let studentsEntriesPerPage = 10;
+    let selectedStudents = new Set();
+    let announcementsCurrentPage = 1;
+    let announcementsEntriesPerPage = 10;
+    let congratulationsCurrentPage = 1;
+    let congratulationsEntriesPerPage = 10;
+    let certificatesCurrentPage = 1;
+    let certificatesEntriesPerPage = 10;
     let certificates = {}; // Cloud-only
     let congratulations = {}; // Cloud-only
     if (!certificates || Array.isArray(certificates)) certificates = {};
@@ -69,6 +77,9 @@
       // Refresh registration form state when navigating
       if (page === 'pendaftaran') {
         applyHomepageSettings();
+      }
+      if (page === 'data-kelulusan') {
+        renderGraduatedDataPublic();
       }
 
       document.querySelectorAll('.page-section').forEach(section => {
@@ -310,7 +321,11 @@
         await window.dataSdk.subscribe('students', {
           onDataChanged(data) {
             students = data;
-            if (isOperatorLoggedIn()) renderStudents();
+            renderGraduatedDataPublic();
+            if (isOperatorLoggedIn()) {
+              renderStudents();
+              renderGraduatedHistoryAdmin();
+            }
           }
         });
 
@@ -318,10 +333,12 @@
           onDataChanged(data) {
             schedules = data;
             renderPublicSchedule();
+            renderGraduatedDataPublic();
             if (isOperatorLoggedIn()) {
               renderScheduleAdmin();
               renderGraduationTable();
               renderCertificateTable();
+              renderGraduatedHistoryAdmin();
             }
           }
         });
@@ -945,12 +962,22 @@
       }
 
       // 2. Render Informasi Kelulusan Siswa (Merged Table)
-      if (graduationItems.length > 0) {
+      // FILTER: Hanya tampilkan kelulusan dari BULAN SEKARANG
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+
+      const graduationItemsThisMonth = graduationItems.filter(it => {
+        const d = new Date(it.date);
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+      });
+
+      if (graduationItemsThisMonth.length > 0) {
         // Kumpulkan SEMUA periode unik dari seluruh database (schedules, students, announcements)
         const periodSet = new Set();
         (schedules || []).forEach(s => { if (s.period && s.period !== '-') periodSet.add(s.period); });
         (students || []).forEach(s => { if (s.period && s.period !== '-') periodSet.add(s.period); });
-        (announcements || []).forEach(a => {
+        graduationItemsThisMonth.forEach(a => {
           if (a.studentResults) {
             a.studentResults.forEach(r => { if (r.period && r.period !== '-') periodSet.add(r.period); });
           }
@@ -974,7 +1001,7 @@
           return p;
         };
 
-        graduationItems.forEach(it => {
+        graduationItemsThisMonth.forEach(it => {
           it.studentResults.forEach(res => {
             // Cari periode asli (raw)
             let rawPeriod = res.period;
@@ -1088,6 +1115,185 @@
         }
       });
       newPeriod?.addEventListener('change', () => renderPublicAnnouncements());
+    }
+
+    function renderGraduatedDataPublic() {
+      const container = document.getElementById('graduated-periods-container');
+      if (!container) return;
+
+      const graduatedStudents = (students || []).filter(s => s.graduationStatus === 'Lulus');
+      
+      if (graduatedStudents.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-10 card-shine bg-emerald-800/30 rounded-2xl border border-gold-500/20">
+            <p class="text-emerald-200/70">Belum ada data kelulusan yang tersedia.</p>
+          </div>`;
+        return;
+      }
+
+      // Group by period
+      const grouped = {};
+      graduatedStudents.forEach(s => {
+        const p = s.period || 'Lainnya';
+        if (!grouped[p]) grouped[p] = [];
+        grouped[p].push(s);
+      });
+
+      const periods = Object.keys(grouped).sort().reverse();
+
+      container.innerHTML = periods.map(p => {
+        const studentsInPeriod = grouped[p].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        const periodId = p.replace(/[^a-z0-9]/gi, '-');
+        return `
+          <div class="card-shine bg-emerald-800/30 backdrop-blur-sm rounded-2xl border border-emerald-700/40 hover:border-gold-500/30 transition-all overflow-hidden animate-fade-in">
+            <div class="p-5 flex items-center justify-between cursor-pointer group" onclick="toggleGraduatedPeriodDetail('${periodId}')">
+              <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-xl bg-emerald-950/50 flex items-center justify-center text-gold-400 shrink-0 group-hover:bg-gold-500/10 transition-colors">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-10V4a1 1 0 011-1h2a1 1 0 011 1v3M12 7h1m-1 4h1m-3 12h3"/></svg>
+                </div>
+                <div>
+                  <h4 class="text-sm font-bold text-white group-hover:text-gold-400 transition-colors">Periode: ${p}</h4>
+                  <p class="text-[10px] text-emerald-500/60 mt-0.5 font-medium">${studentsInPeriod.length} Siswa Lulus</p>
+                </div>
+              </div>
+              <div id="grad-period-icon-${periodId}" class="w-8 h-8 rounded-lg bg-emerald-900/30 flex items-center justify-center text-emerald-400 group-hover:text-gold-400 transition-all duration-300">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+              </div>
+            </div>
+            
+            <div id="grad-period-detail-${periodId}" class="hidden px-5 pb-6 border-t border-emerald-700/20 pt-4 animate-slide-down overflow-x-auto">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead class="text-emerald-400 font-bold border-b border-emerald-700/30">
+                  <tr>
+                    <th class="px-2 py-2 w-10">No</th>
+                    <th class="px-2 py-2">Nama</th>
+                    <th class="px-2 py-2">Kelas</th>
+                    <th class="px-2 py-2">Juz</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-emerald-700/10">
+                  ${studentsInPeriod.map((s, idx) => `
+                    <tr class="hover:bg-emerald-800/20 transition-colors">
+                      <td class="px-2 py-3 text-emerald-500/50 font-mono">${idx + 1}</td>
+                      <td class="px-2 py-3 text-white font-medium">${s.name || '-'}</td>
+                      <td class="px-2 py-3 text-emerald-200/70">${s.class || '-'}</td>
+                      <td class="px-2 py-3 text-emerald-200/70">${s.juz || '-'}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.toggleGraduatedPeriodDetail = function(periodId) {
+      const el = document.getElementById(`grad-period-detail-${periodId}`);
+      const icon = document.getElementById(`grad-period-icon-${periodId}`);
+      if (el) {
+        el.classList.toggle('hidden');
+        if (icon) {
+          icon.style.transform = el.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
+      }
+    };
+
+    function renderGraduatedHistoryAdmin() {
+      requireOperator();
+      const wrap = document.getElementById('grad-history-list');
+      const searchInput = document.getElementById('grad-history-search');
+      const periodFilter = document.getElementById('grad-history-period-filter');
+      if (!wrap) return;
+
+      const searchTerm = (searchInput?.value || '').toLowerCase().trim();
+      const selectedPeriod = periodFilter?.value || 'all';
+
+      const graduatedStudents = (students || []).filter(s => s.graduationStatus === 'Lulus');
+      
+      // Update period filter
+      const periods = [...new Set(graduatedStudents.map(s => s.period || 'Lainnya'))].sort();
+      if (periodFilter) {
+        const currentVal = periodFilter.value;
+        periodFilter.innerHTML = '<option value="all">Semua Periode</option>' + 
+          periods.map(p => `<option value="${p}" ${p === currentVal ? 'selected' : ''}>${p}</option>`).join('');
+      }
+
+      let list = graduatedStudents;
+      if (searchTerm) {
+        list = list.filter(s => (s.name || '').toLowerCase().includes(searchTerm));
+      }
+      if (selectedPeriod !== 'all') {
+        list = list.filter(s => (s.period || 'Lainnya') === selectedPeriod);
+      }
+
+      if (list.length === 0) {
+        wrap.innerHTML = `<div class="text-center py-10 card-shine bg-emerald-800/30 rounded-2xl border border-gold-500/20">
+          <p class="text-emerald-200/70">${searchTerm || selectedPeriod !== 'all' ? 'Tidak ada data yang cocok.' : 'Belum ada data kelulusan.'}</p>
+        </div>`;
+        return;
+      }
+
+      // Group by period for the list
+      const grouped = {};
+      list.forEach(s => {
+        const p = s.period || 'Lainnya';
+        if (!grouped[p]) grouped[p] = [];
+        grouped[p].push(s);
+      });
+
+      const listPeriods = Object.keys(grouped).sort().reverse();
+
+      wrap.innerHTML = listPeriods.map(p => {
+        const studentsInPeriod = grouped[p].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        return `
+          <div class="card-shine bg-emerald-900/30 rounded-2xl border border-emerald-700/40 overflow-hidden">
+            <div class="px-5 py-3 bg-emerald-950/40 border-b border-emerald-700/30 flex items-center justify-between">
+              <h4 class="text-white font-bold text-xs uppercase tracking-wider">Periode: ${p}</h4>
+              <span class="text-[10px] text-emerald-400 font-medium">${studentsInPeriod.length} Siswa</span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-emerald-950/20 text-emerald-400 font-bold uppercase tracking-widest text-[9px]">
+                  <tr>
+                    <th class="px-4 py-2 w-10">No</th>
+                    <th class="px-4 py-2">Nama</th>
+                    <th class="px-4 py-2">Kelas</th>
+                    <th class="px-4 py-2">Juz</th>
+                    <th class="px-4 py-2 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-emerald-700/10">
+                  ${studentsInPeriod.map((s, idx) => `
+                    <tr class="hover:bg-emerald-800/10 transition-colors group">
+                      <td class="px-4 py-3 text-emerald-500/50 font-mono">${idx + 1}</td>
+                      <td class="px-4 py-3 text-white font-medium">${s.name || '-'}</td>
+                      <td class="px-4 py-3 text-emerald-200/70">${s.class || '-'}</td>
+                      <td class="px-4 py-3 text-emerald-200/70">${s.juz || '-'}</td>
+                      <td class="px-4 py-3 text-right">
+                        <button class="p-1.5 rounded-lg bg-emerald-800/50 text-gold-400 hover:bg-emerald-700 transition opacity-0 group-hover:opacity-100" onclick="viewStudentDetail('${(s.name || '').replace(/'/g, "\\'")}')" title="Lihat Data Lengkap">
+                          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        </button>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function viewStudentDetail(name) {
+      setOperatorTab('students');
+      const searchInput = document.getElementById('students-search');
+      if (searchInput) {
+        searchInput.value = name;
+        // Trigger render
+        studentsCurrentPage = 1;
+        renderStudents();
+      }
     }
 
     function viewCertificatePublic(studentId, studentName) {
@@ -1479,6 +1685,82 @@
       }, 300);
     }
 
+    function updateStudentsBulkActionsUI() {
+      const bulkActions = document.getElementById('students-bulk-actions');
+      const countLabel = document.getElementById('students-selected-count');
+      if (!bulkActions || !countLabel) return;
+
+      if (selectedStudents.size > 0) {
+        bulkActions.classList.remove('hidden');
+        countLabel.textContent = `${selectedStudents.size} Terpilih`;
+      } else {
+        bulkActions.classList.add('hidden');
+      }
+    }
+
+    async function bulkUpdateGraduation(status) {
+      if (selectedStudents.size === 0) return;
+
+      const confirmed = await showConfirmationModal({
+        title: `Umumkan ${status} Masal?`,
+        body: `Anda akan menentukan status ${status} dan mengumumkan ${selectedStudents.size} siswa sekaligus. Lanjutkan?`,
+        confirmText: 'Ya, Umumkan'
+      });
+
+      if (!confirmed) return;
+
+      showToast(`Memproses ${selectedStudents.size} siswa...`, 'info');
+      
+      try {
+        const studentIds = Array.from(selectedStudents);
+        const results = [];
+
+        for (const id of studentIds) {
+          const student = students.find(s => s.id === id);
+          if (!student) continue;
+
+          // 1. Update Student status in DB
+          await window.dataSdk?.update?.('students', id, {
+            graduationStatus: status,
+            updated_at: new Date().toISOString()
+          });
+
+          // 2. Prepare result for announcement
+          results.push({
+            studentId: id,
+            studentName: student.name,
+            status: status,
+            juz: student.juz || '-',
+            period: student.period || '-',
+            class: student.class || '-'
+          });
+        }
+
+        // 3. Create Bulk Announcement
+        const announcementId = 'ANN-BULK-' + Date.now();
+        const newAnnouncement = {
+          id: announcementId,
+          title: `Pengumuman Kelulusan Tasmi' - ${status === 'Lulus' ? 'Selamat!' : 'Tetap Semangat!'}`,
+          body: `Alhamdulillah, berikut adalah hasil tasmi' untuk beberapa siswa kami. ${status === 'Lulus' ? 'Selamat bagi yang telah lulus, semoga berkah.' : 'Bagi yang belum lulus, tetap semangat dan terus murojaah.'}`,
+          tag: 'Info',
+          date: new Date().toISOString().split('T')[0],
+          studentResults: results,
+          hidden: false,
+          created_at: new Date().toISOString()
+        };
+
+        await window.dataSdk?.create?.('announcements', newAnnouncement);
+
+        showToast(`${selectedStudents.size} siswa berhasil diumumkan.`, 'success');
+        selectedStudents.clear();
+        renderStudents();
+        renderPublicAnnouncements();
+      } catch (err) {
+        console.error('Error bulk updating graduation:', err);
+        showToast('Gagal memproses aksi massal.', 'error');
+      }
+    }
+
     function renderStudents() {
       requireOperator();
       const tbody = document.getElementById('students-table-body');
@@ -1546,6 +1828,16 @@
       if (prevBtn) prevBtn.disabled = studentsCurrentPage === 1;
       if (nextBtn) nextBtn.disabled = studentsCurrentPage === totalPages;
 
+      // Update Select All Checkbox state
+      const selectAllCheckbox = document.getElementById('students-select-all');
+      if (selectAllCheckbox) {
+        const allOnPageSelected = paginatedList.every(s => selectedStudents.has(s.id));
+        selectAllCheckbox.checked = paginatedList.length > 0 && allOnPageSelected;
+      }
+
+      // Update Bulk Actions UI
+      updateStudentsBulkActionsUI();
+
       if (pagesEl) {
         pagesEl.innerHTML = '';
         const maxVisiblePages = 5;
@@ -1601,7 +1893,10 @@
           : '';
 
         tbody.insertAdjacentHTML('beforeend', `
-          <tr class="hover:bg-emerald-800/20 transition-colors group">
+          <tr class="hover:bg-emerald-800/20 transition-colors group ${selectedStudents.has(s.id) ? 'bg-emerald-800/10' : ''}">
+            <td class="px-4 py-4 text-left">
+              <input type="checkbox" class="student-checkbox w-4 h-4 rounded border-emerald-700 bg-emerald-900/50 text-gold-500 focus:ring-gold-500/20 cursor-pointer transition-all" data-id="${s.id}" ${selectedStudents.has(s.id) ? 'checked' : ''}>
+            </td>
             <td class="px-4 py-4 text-emerald-200/50 font-mono">${start + index + 1}</td>
             <td class="px-4 py-4">
               <div class="flex items-center gap-3">
@@ -2127,8 +2422,10 @@
       requireOperator();
       const wrap = document.getElementById('ann-list');
       const searchInput = document.getElementById('ann-search');
+      const entriesSelect = document.getElementById('ann-entries');
       if (!wrap) return;
 
+      const limit = parseInt(entriesSelect?.value || '10');
       const tagClass = (tag) => {
         if (tag === 'Penting') return 'bg-red-500/20 text-red-400';
         if (tag === 'Kegiatan') return 'bg-blue-500/20 text-blue-400';
@@ -2148,20 +2445,69 @@
         );
       }
 
+      const totalItems = list.length;
+      const totalPages = Math.ceil(totalItems / limit);
+      
+      if (announcementsCurrentPage > totalPages) announcementsCurrentPage = Math.max(1, totalPages);
+      
+      const start = (announcementsCurrentPage - 1) * limit;
+      const end = start + limit;
+      const paginatedList = list.slice(start, end);
+
       wrap.innerHTML = '';
-      if (list.length === 0) {
-        wrap.innerHTML = `<div class="text-emerald-200/70 text-sm">Belum ada pengumuman. Tambahkan dari form di atas.</div>`;
+      if (paginatedList.length === 0) {
+        wrap.innerHTML = `<div class="text-emerald-200/70 text-sm">${searchTerm ? 'Tidak ada pengumuman yang cocok.' : 'Belum ada pengumuman. Tambahkan dari form di atas.'}</div>`;
+        document.getElementById('ann-pagination')?.classList.add('hidden');
         return;
       }
+      document.getElementById('ann-pagination')?.classList.remove('hidden');
 
-      list.forEach(it => {
+      // Update Pagination UI
+      const rangeEl = document.getElementById('ann-range');
+      const totalEl = document.getElementById('ann-total');
+      const prevBtn = document.getElementById('ann-prev');
+      const nextBtn = document.getElementById('ann-next');
+      const pagesEl = document.getElementById('ann-pages');
+
+      if (rangeEl) rangeEl.textContent = `${start + 1} - ${Math.min(end, totalItems)}`;
+      if (totalEl) totalEl.textContent = totalItems;
+      if (prevBtn) prevBtn.disabled = announcementsCurrentPage === 1;
+      if (nextBtn) nextBtn.disabled = announcementsCurrentPage === totalPages;
+
+      if (pagesEl) {
+        pagesEl.innerHTML = '';
+        const maxVisiblePages = 5;
+        let startPage = Math.max(1, announcementsCurrentPage - Math.floor(maxVisiblePages / 2));
+        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+        
+        if (endPage - startPage + 1 < maxVisiblePages) {
+          startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+          const btn = document.createElement('button');
+          btn.textContent = i;
+          btn.className = `px-2 py-1 rounded-lg text-[10px] font-medium transition-all ${
+            i === announcementsCurrentPage 
+              ? 'bg-gold-500 text-emerald-950 shadow-lg shadow-gold-500/20' 
+              : 'text-emerald-400 hover:bg-emerald-800/30 border border-emerald-700/30'
+          }`;
+          btn.onclick = () => {
+            announcementsCurrentPage = i;
+            renderAnnouncementsAdmin();
+          };
+          pagesEl.appendChild(btn);
+        }
+      }
+
+      paginatedList.forEach(it => {
         const isHidden = !!it.hidden;
         wrap.insertAdjacentHTML('beforeend', `
           <div class="rounded-2xl ${isHidden ? 'bg-emerald-950/10 opacity-60' : 'bg-emerald-950/40'} border ${isHidden ? 'border-emerald-800/20' : 'border-emerald-700/30'} group hover:border-gold-500/20 hover:bg-emerald-950/60 transition-all duration-300 w-full overflow-hidden animate-fade-in">
             <!-- Header (Clickable to Toggle) -->
-            <div class="p-3 flex items-center justify-between gap-4 cursor-pointer" onclick="toggleAnnouncementDetail('${it.id}')">
+            <div class="ann-header p-3 flex items-center justify-between gap-4 cursor-pointer" data-id="${it.id}">
               <div class="flex items-center gap-3 overflow-hidden min-w-0 flex-1">
-                <div class="flex items-center justify-center shrink-0" onclick="event.stopPropagation()">
+                <div class="flex items-center justify-center shrink-0">
                   <input type="checkbox" class="ann-checkbox w-4 h-4 rounded-lg border-emerald-700 bg-emerald-900/50 text-gold-500 focus:ring-gold-500/20 cursor-pointer transition-all" data-id="${it.id}">
                 </div>
                 <div class="overflow-hidden min-w-0 flex-1">
@@ -2177,7 +2523,7 @@
                 </div>
               </div>
               
-              <div class="shrink-0 flex items-center gap-1" onclick="event.stopPropagation()">
+              <div class="shrink-0 flex items-center gap-1">
                 <button class="ann-action p-2 rounded-xl text-emerald-400 hover:text-gold-400 hover:bg-emerald-800/50 transition-all" data-id="${it.id}" data-action="toggle-visibility" title="${isHidden ? 'Tampilkan' : 'Sembunyikan'}">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     ${isHidden 
@@ -2404,8 +2750,9 @@
           setOperatorTab('graduation');
           renderGraduationTable();
         } else {
-          setOperatorTab('approval');
+          setOperatorTab('students');
           renderApprovalTable();
+          renderStudents();
         }
       } else {
         showToast('Login gagal. Username / password salah.', 'error');
@@ -2447,17 +2794,30 @@
         try { requireOperator(); } catch { return; }
         const tab = btn.dataset.tab;
         setOperatorTab(tab);
-        if (tab === 'general') applyBranding();
-        if (tab === 'approval') renderApprovalTable();
-        if (tab === 'students') renderStudents();
+        if (tab === 'settings') {
+          applyBranding();
+          loadHomepageSettingsIntoForm();
+          loadRegistrationSettingsIntoForm();
+        }
+        if (tab === 'students') {
+          renderApprovalTable();
+          studentsCurrentPage = 1;
+          renderStudents();
+        }
+        if (tab === 'graduated-history') renderGraduatedHistoryAdmin();
         if (tab === 'schedule') renderScheduleAdmin();
         if (tab === 'graduation') renderGraduationTable();
         if (tab === 'pentasmi') renderPentasmiList();
-        if (tab === 'announcements') renderAnnouncementsAdmin();
-        if (tab === 'certificates') renderCertificateTable();
-        if (tab === 'congratulations') renderCongratulationsTable();
-        if (tab === 'homepage') loadHomepageSettingsIntoForm();
-        if (tab === 'registration-settings') loadRegistrationSettingsIntoForm();
+        if (tab === 'announcements') {
+          announcementsCurrentPage = 1;
+          renderAnnouncementsAdmin();
+        }
+        if (tab === 'media') {
+          certificatesCurrentPage = 1;
+          renderCertificateTable();
+          congratulationsCurrentPage = 1;
+          renderCongratulationsTable();
+        }
         if (tab === 'pentasmi-history') renderPentasmiHistory();
         if (tab === 'operator-monitoring') renderMonitoringHistory();
       });
@@ -2471,12 +2831,20 @@
       requireOperator();
       const tbody = document.getElementById('congratulations-table');
       const searchInput = document.getElementById('congrats-search');
+      const entriesSelect = document.getElementById('congrats-entries');
       if (!tbody) return;
       
+      const limit = parseInt(entriesSelect?.value || '10');
       const searchTerm = (searchInput?.value || '').toLowerCase().trim();
       const congratsData = congratulations || {};
 
-      let list = students || [];
+      const passedFromSchedules = new Set(
+        (schedules || []).filter(it => it.graduationStatus === 'Lulus').map(it => it.studentId)
+      );
+      
+      let list = (students || []).filter(s => 
+        (s.graduationStatus === 'Lulus' || passedFromSchedules.has(s.id)) && s.graduationStatus !== 'Tidak Lulus'
+      );
 
       // Apply Search Filter
       if (searchTerm) {
@@ -2486,13 +2854,62 @@
         );
       }
 
+      const totalItems = list.length;
+      const totalPages = Math.ceil(totalItems / limit);
+      
+      if (congratulationsCurrentPage > totalPages) congratulationsCurrentPage = Math.max(1, totalPages);
+      
+      const start = (congratulationsCurrentPage - 1) * limit;
+      const end = start + limit;
+      const paginatedList = list.slice(start, end);
+
       tbody.innerHTML = '';
-      if (list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="px-4 py-6 text-center text-emerald-200/70">${searchTerm ? 'Tidak ada siswa yang cocok.' : 'Belum ada data siswa.'}</td></tr>`;
+      if (paginatedList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="px-4 py-6 text-center text-emerald-200/70">${searchTerm ? 'Tidak ada siswa yang cocok.' : 'Belum ada siswa yang lulus tasmi.'}</td></tr>`;
+        document.getElementById('congrats-pagination')?.classList.add('hidden');
         return;
       }
+      document.getElementById('congrats-pagination')?.classList.remove('hidden');
 
-      list.forEach(s => {
+      // Update Pagination UI
+      const rangeEl = document.getElementById('congrats-range');
+      const totalEl = document.getElementById('congrats-total');
+      const prevBtn = document.getElementById('congrats-prev');
+      const nextBtn = document.getElementById('congrats-next');
+      const pagesEl = document.getElementById('congrats-pages');
+
+      if (rangeEl) rangeEl.textContent = `${start + 1} - ${Math.min(end, totalItems)}`;
+      if (totalEl) totalEl.textContent = totalItems;
+      if (prevBtn) prevBtn.disabled = congratulationsCurrentPage === 1;
+      if (nextBtn) nextBtn.disabled = congratulationsCurrentPage === totalPages;
+
+      if (pagesEl) {
+        pagesEl.innerHTML = '';
+        const maxVisiblePages = 5;
+        let startPage = Math.max(1, congratulationsCurrentPage - Math.floor(maxVisiblePages / 2));
+        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+        
+        if (endPage - startPage + 1 < maxVisiblePages) {
+          startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+          const btn = document.createElement('button');
+          btn.textContent = i;
+          btn.className = `px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            i === congratulationsCurrentPage 
+              ? 'bg-gold-500 text-emerald-950 shadow-lg shadow-gold-500/20' 
+              : 'text-emerald-400 hover:bg-emerald-800/30 border border-emerald-700/30'
+          }`;
+          btn.onclick = () => {
+            congratulationsCurrentPage = i;
+            renderCongratulationsTable();
+          };
+          pagesEl.appendChild(btn);
+        }
+      }
+
+      paginatedList.forEach(s => {
         const hasCongrats = !!congratsData[s.id];
         const isThisUploading = isUploadingCongrats && currentCongratsStudentId === s.id;
 
@@ -2567,7 +2984,27 @@
       }
     });
 
-    document.getElementById('congrats-search')?.addEventListener('input', () => renderCongratulationsTable());
+    document.getElementById('congrats-search')?.addEventListener('input', () => {
+      congratulationsCurrentPage = 1;
+      renderCongratulationsTable();
+    });
+
+    document.getElementById('congrats-entries')?.addEventListener('change', () => {
+      congratulationsCurrentPage = 1;
+      renderCongratulationsTable();
+    });
+
+    document.getElementById('congrats-prev')?.addEventListener('click', () => {
+      if (congratulationsCurrentPage > 1) {
+        congratulationsCurrentPage--;
+        renderCongratulationsTable();
+      }
+    });
+
+    document.getElementById('congrats-next')?.addEventListener('click', () => {
+      congratulationsCurrentPage++;
+      renderCongratulationsTable();
+    });
 
     document.getElementById('congrats-upload-input')?.addEventListener('change', async (e) => {
       const file = e.target.files[0];
@@ -2647,8 +3084,10 @@
       requireOperator();
       const tbody = document.getElementById('certificate-table');
       const searchInput = document.getElementById('cert-search');
+      const entriesSelect = document.getElementById('cert-entries');
       if (!tbody) return;
       
+      const limit = parseInt(entriesSelect?.value || '10');
       const searchTerm = (searchInput?.value || '').toLowerCase().trim();
       const certs = certificates || {};
 
@@ -2657,7 +3096,7 @@
       );
       
       let passedStudents = (students || []).filter(s => 
-        s.graduationStatus === 'Lulus' || passedFromSchedules.has(s.id)
+        (s.graduationStatus === 'Lulus' || passedFromSchedules.has(s.id)) && s.graduationStatus !== 'Tidak Lulus'
       );
 
       // Apply Search Filter
@@ -2668,16 +3107,62 @@
         );
       }
 
+      const totalItems = passedStudents.length;
+      const totalPages = Math.ceil(totalItems / limit);
+      
+      if (certificatesCurrentPage > totalPages) certificatesCurrentPage = Math.max(1, totalPages);
+      
+      const start = (certificatesCurrentPage - 1) * limit;
+      const end = start + limit;
+      const paginatedList = passedStudents.slice(start, end);
+
       tbody.innerHTML = '';
-      if (passedStudents.length === 0) {
+      if (paginatedList.length === 0) {
         tbody.innerHTML = `<tr><td colspan="4" class="px-4 py-6 text-center text-emerald-200/70">${searchTerm ? 'Tidak ada siswa yang cocok dengan pencarian.' : 'Belum ada siswa yang lulus tasmi.'}</td></tr>`;
+        document.getElementById('cert-pagination')?.classList.add('hidden');
         return;
       }
+      document.getElementById('cert-pagination')?.classList.remove('hidden');
 
-      passedStudents.forEach(s => {
-        // Skip students explicitly marked as "Tidak Lulus" in their current profile
-        if (s.graduationStatus === 'Tidak Lulus') return;
+      // Update Pagination UI
+      const rangeEl = document.getElementById('cert-range');
+      const totalEl = document.getElementById('cert-total');
+      const prevBtn = document.getElementById('cert-prev');
+      const nextBtn = document.getElementById('cert-next');
+      const pagesEl = document.getElementById('cert-pages');
+
+      if (rangeEl) rangeEl.textContent = `${start + 1} - ${Math.min(end, totalItems)}`;
+      if (totalEl) totalEl.textContent = totalItems;
+      if (prevBtn) prevBtn.disabled = certificatesCurrentPage === 1;
+      if (nextBtn) nextBtn.disabled = certificatesCurrentPage === totalPages;
+
+      if (pagesEl) {
+        pagesEl.innerHTML = '';
+        const maxVisiblePages = 5;
+        let startPage = Math.max(1, certificatesCurrentPage - Math.floor(maxVisiblePages / 2));
+        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
         
+        if (endPage - startPage + 1 < maxVisiblePages) {
+          startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+          const btn = document.createElement('button');
+          btn.textContent = i;
+          btn.className = `px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            i === certificatesCurrentPage 
+              ? 'bg-gold-500 text-emerald-950 shadow-lg shadow-gold-500/20' 
+              : 'text-emerald-400 hover:bg-emerald-800/30 border border-emerald-700/30'
+          }`;
+          btn.onclick = () => {
+            certificatesCurrentPage = i;
+            renderCertificateTable();
+          };
+          pagesEl.appendChild(btn);
+        }
+      }
+
+      paginatedList.forEach(s => {
         const hasCert = !!certs[s.id];
         const isThisUploading = isUploadingCert && currentUploadStudentId === s.id;
 
@@ -2814,7 +3299,27 @@
       });
     }
 
-    document.getElementById('cert-search')?.addEventListener('input', () => renderCertificateTable());
+    document.getElementById('cert-search')?.addEventListener('input', () => {
+      certificatesCurrentPage = 1;
+      renderCertificateTable();
+    });
+
+    document.getElementById('cert-entries')?.addEventListener('change', () => {
+      certificatesCurrentPage = 1;
+      renderCertificateTable();
+    });
+
+    document.getElementById('cert-prev')?.addEventListener('click', () => {
+      if (certificatesCurrentPage > 1) {
+        certificatesCurrentPage--;
+        renderCertificateTable();
+      }
+    });
+
+    document.getElementById('cert-next')?.addEventListener('click', () => {
+      certificatesCurrentPage++;
+      renderCertificateTable();
+    });
 
     document.getElementById('certificate-upload-input')?.addEventListener('change', async (e) => {
       const file = e.target.files[0];
@@ -3332,14 +3837,51 @@
     document.getElementById('student-modal-cancel')?.addEventListener('click', () => closeStudentModal());
     document.getElementById('students-entries')?.addEventListener('change', () => {
       studentsCurrentPage = 1;
+      selectedStudents.clear(); // Clear selection when entries per page change
       renderStudents();
     });
     document.getElementById('students-period-filter')?.addEventListener('change', () => {
       studentsCurrentPage = 1;
+      selectedStudents.clear(); // Clear selection when filter change
       renderStudents();
     });
     document.getElementById('students-search')?.addEventListener('input', () => {
       studentsCurrentPage = 1;
+      selectedStudents.clear(); // Clear selection when search change
+      renderStudents();
+    });
+
+    // Bulk actions listeners
+    document.getElementById('students-select-all')?.addEventListener('change', (e) => {
+      const isChecked = e.target.checked;
+      const checkboxes = document.querySelectorAll('.student-checkbox');
+      checkboxes.forEach(cb => {
+        const id = cb.dataset.id;
+        if (isChecked) {
+          selectedStudents.add(id);
+        } else {
+          selectedStudents.delete(id);
+        }
+      });
+      renderStudents();
+    });
+
+    document.addEventListener('change', (e) => {
+      if (e.target.classList.contains('student-checkbox')) {
+        const id = e.target.dataset.id;
+        if (e.target.checked) {
+          selectedStudents.add(id);
+        } else {
+          selectedStudents.delete(id);
+        }
+        renderStudents();
+      }
+    });
+
+    document.getElementById('students-bulk-pass')?.addEventListener('click', () => bulkUpdateGraduation('Lulus'));
+    document.getElementById('students-bulk-fail')?.addEventListener('click', () => bulkUpdateGraduation('Tidak Lulus'));
+    document.getElementById('students-bulk-cancel')?.addEventListener('click', () => {
+      selectedStudents.clear();
       renderStudents();
     });
 
@@ -3351,14 +3893,8 @@
     });
 
     document.getElementById('students-next')?.addEventListener('click', () => {
-      const entriesSelect = document.getElementById('students-entries');
-      const limit = parseInt(entriesSelect?.value || '10');
-      const totalItems = students.length;
-      const totalPages = Math.ceil(totalItems / limit);
-      if (studentsCurrentPage < totalPages) {
-        studentsCurrentPage++;
-        renderStudents();
-      }
+      studentsCurrentPage++;
+      renderStudents();
     });
 
     // Student photo preview logic
@@ -3668,6 +4204,8 @@
       if (idEl) idEl.value = '';
     });
     document.getElementById('schedule-search')?.addEventListener('input', () => renderScheduleAdmin());
+    document.getElementById('grad-history-search')?.addEventListener('input', () => renderGraduatedHistoryAdmin());
+    document.getElementById('grad-history-period-filter')?.addEventListener('change', () => renderGraduatedHistoryAdmin());
 
     document.getElementById('schedule-list')?.addEventListener('click', async (e) => {
       const btn = e.target.closest('.schedule-action');
@@ -3773,7 +4311,27 @@
       if (idEl) idEl.value = '';
     });
 
-    document.getElementById('ann-search')?.addEventListener('input', () => renderAnnouncementsAdmin());
+    document.getElementById('ann-search')?.addEventListener('input', () => {
+      announcementsCurrentPage = 1;
+      renderAnnouncementsAdmin();
+    });
+
+    document.getElementById('ann-entries')?.addEventListener('change', () => {
+      announcementsCurrentPage = 1;
+      renderAnnouncementsAdmin();
+    });
+
+    document.getElementById('ann-prev')?.addEventListener('click', () => {
+      if (announcementsCurrentPage > 1) {
+        announcementsCurrentPage--;
+        renderAnnouncementsAdmin();
+      }
+    });
+
+    document.getElementById('ann-next')?.addEventListener('click', () => {
+      announcementsCurrentPage++;
+      renderAnnouncementsAdmin();
+    });
     document.getElementById('ann-bulk-delete')?.addEventListener('click', () => deleteAnnouncementsBulk());
     document.getElementById('ann-list')?.addEventListener('change', (e) => {
       if (e.target.classList.contains('ann-checkbox')) {
@@ -3782,45 +4340,60 @@
     });
 
     document.getElementById('ann-list')?.addEventListener('click', async (e) => {
+      // 1. Check for buttons
       const btn = e.target.closest('.ann-action');
-      if (!btn) return;
-      try { requireOperator(); } catch { return; }
-      const id = btn.dataset.id;
-      const action = btn.dataset.action;
-      const item = announcements.find(x => x.id === id);
-      if (!item) return;
+      if (btn) {
+        try { requireOperator(); } catch { return; }
+        const id = btn.dataset.id;
+        const action = btn.dataset.action;
+        const item = announcements.find(x => x.id === id);
+        if (!item) return;
 
-      if (action === 'edit') {
-        document.getElementById('ann-id').value = item.id;
-        document.getElementById('ann-title').value = item.title || '';
-        document.getElementById('ann-tag').value = item.tag || 'Info';
-        document.getElementById('ann-date').value = item.date || '';
-        document.getElementById('ann-body').value = item.body || '';
-        showToast('Edit pengumuman: ubah lalu Simpan.', 'success');
-      } else if (action === 'toggle-visibility') {
-        const newHiddenStatus = !item.hidden;
-        showToast(newHiddenStatus ? 'Menyembunyikan pengumuman...' : 'Menampilkan pengumuman...', 'info');
-        try {
-          await window.dataSdk?.update?.('announcements', id, { hidden: newHiddenStatus });
-          showToast(newHiddenStatus ? 'Pengumuman disembunyikan' : 'Pengumuman ditampilkan', 'success');
-          // Subscription will trigger re-render, but for immediate feedback:
-          item.hidden = newHiddenStatus; 
+        if (action === 'edit') {
+          document.getElementById('ann-id').value = item.id;
+          document.getElementById('ann-title').value = item.title || '';
+          document.getElementById('ann-tag').value = item.tag || 'Info';
+          document.getElementById('ann-date').value = item.date || '';
+          document.getElementById('ann-body').value = item.body || '';
+          showToast('Edit pengumuman: ubah lalu Simpan.', 'success');
+        } else if (action === 'toggle-visibility') {
+          const newHiddenStatus = !item.hidden;
+          showToast(newHiddenStatus ? 'Menyembunyikan pengumuman...' : 'Menampilkan pengumuman...', 'info');
+          try {
+            await window.dataSdk?.update?.('announcements', id, { hidden: newHiddenStatus });
+            showToast(newHiddenStatus ? 'Pengumuman disembunyikan' : 'Pengumuman ditampilkan', 'success');
+            // Subscription will trigger re-render, but for immediate feedback:
+            item.hidden = newHiddenStatus; 
+            renderAnnouncementsAdmin();
+            renderPublicAnnouncements();
+          } catch (err) {
+            console.error('Error toggling visibility:', err);
+            showToast('Gagal mengubah visibilitas.', 'error');
+          }
+        } else if (action === 'delete') {
+          const confirmed = await showConfirmationModal({
+            title: 'Hapus Pengumuman?',
+            body: 'Anda yakin ingin menghapus pengumuman ini?'
+          });
+          if (!confirmed) return;
+          await window.dataSdk?.remove?.('announcements', id);
+          showToast('Pengumuman dihapus.', 'success');
           renderAnnouncementsAdmin();
           renderPublicAnnouncements();
-        } catch (err) {
-          console.error('Error toggling visibility:', err);
-          showToast('Gagal mengubah visibilitas.', 'error');
         }
-      } else if (action === 'delete') {
-        const confirmed = await showConfirmationModal({
-          title: 'Hapus Pengumuman?',
-          body: 'Anda yakin ingin menghapus pengumuman ini?'
-        });
-        if (!confirmed) return;
-        await window.dataSdk?.remove?.('announcements', id);
-        showToast('Pengumuman dihapus.', 'success');
-        renderAnnouncementsAdmin();
-        renderPublicAnnouncements();
+        return;
+      }
+
+      // 2. Check for checkbox (let the 'change' listener handle it)
+      if (e.target.closest('.ann-checkbox')) return;
+
+      // 3. Check for header (toggle detail)
+      const header = e.target.closest('.ann-header');
+      if (header) {
+        const id = header.dataset.id;
+        if (id && window.toggleAnnouncementDetail) {
+          window.toggleAnnouncementDetail(id);
+        }
       }
     });
 
@@ -4240,10 +4813,12 @@
           applyRegistrationSettings();
           renderPublicSchedule();
           renderPublicAnnouncements();
+          renderGraduatedDataPublic();
           
           if (isOperatorLoggedIn()) {
             renderApprovalTable();
             renderStudents();
+            renderGraduatedHistoryAdmin();
             renderScheduleAdmin();
             renderGraduationTable();
             renderAnnouncementsAdmin();
@@ -4276,6 +4851,7 @@
     window.initDataSdk = initDataSdk;
     window.showToast = showToast;
     window.autoCreateSchedule = autoCreateSchedule;
+    window.viewStudentDetail = viewStudentDetail;
     window.syncAllStudentsToGraduation = syncAllStudentsToGraduation;
     window.viewCertificatePublic = viewCertificatePublic;
     window.openGraduationDetailModal = openGraduationDetailModal;
@@ -4290,6 +4866,7 @@
     window.announceGraduation = announceGraduation;
     window.renderApprovalTable = renderApprovalTable;
     window.renderStudents = renderStudents;
+    window.renderGraduatedHistoryAdmin = renderGraduatedHistoryAdmin;
     window.renderScheduleAdmin = renderScheduleAdmin;
     window.renderGraduationTable = renderGraduationTable;
     window.renderAnnouncementsAdmin = renderAnnouncementsAdmin;
