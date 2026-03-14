@@ -802,9 +802,17 @@
     function renderPublicAnnouncements() {
       const container = document.getElementById('public-announcements-container');
       if (!container) return;
-      const items = announcements || [];
       
-      if (!items || !Array.isArray(items) || items.length === 0) {
+      const searchInput = document.getElementById('public-grad-search');
+      const periodFilter = document.getElementById('public-grad-period');
+      const searchTerm = (searchInput?.value || '').toLowerCase().trim();
+      const selectedPeriod = periodFilter?.value || 'all';
+
+      const items = (announcements || [])
+        .slice()
+        .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+      
+      if (items.length === 0) {
         container.innerHTML = `
           <div class="text-center py-10 card-shine bg-emerald-800/30 rounded-2xl border border-gold-500/20">
             <p class="text-emerald-200/70">Belum ada pengumuman terbaru.</p>
@@ -812,92 +820,170 @@
         return;
       }
 
-      container.innerHTML = '';
       const tagClass = (tag) => {
         if (tag === 'Penting') return 'bg-red-500/20 text-red-400';
         if (tag === 'Kegiatan') return 'bg-blue-500/20 text-blue-400';
         return 'bg-green-500/20 text-green-400';
       };
 
-      items
-        .slice()
-        .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')))
-        .forEach(it => {
-          // Hanya tampilkan pengumuman bertipe kelulusan (isGraduation) yang memiliki studentResults
-          // ATAU pengumuman umum (bukan isGraduation) yang memang dibuat manual dari tab pengumuman
-          // Kita bisa membedakan berdasarkan field 'isGraduation' yang kita gunakan saat merender
-          const isGraduation = it.studentResults && Array.isArray(it.studentResults) && it.studentResults.length > 0;
+      // Pisahkan pengumuman manual dan kelulusan
+      const manualItems = items.filter(it => !(it.studentResults && it.studentResults.length > 0));
+      const graduationItems = items.filter(it => it.studentResults && it.studentResults.length > 0);
 
-          if (isGraduation) {
-            // Graduation Announcement: Table Style (No, Nama siswa, Status)
-            const tableRows = it.studentResults.map((res, idx) => `
-              <tr class="hover:bg-emerald-800/40 transition-colors group cursor-pointer border-b border-emerald-700/30 last:border-0" onclick="openGraduationDetailModal('${res.studentId}', '${it.id}')">
-                <td class="px-4 py-3 text-emerald-400 font-mono text-xs">${idx + 1}.</td>
-                <td class="px-4 py-3">
-                  <span class="text-white text-sm font-medium group-hover:text-gold-400 transition-colors">${res.studentName}</span>
-                </td>
-                <td class="px-4 py-3">
-                  <div class="flex items-center justify-between gap-2">
-                    <span class="text-emerald-200/60 text-[11px] group-hover:text-emerald-200 transition-colors">Lihat detail (klik untuk melihat hasil)</span>
-                    <div class="px-2 py-0.5 rounded text-[10px] ${res.status === 'Lulus' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'} font-bold uppercase tracking-wider">${res.status}</div>
+      let html = '';
+
+      // 1. Render Informasi Umum (Manual)
+      if (manualItems.length > 0) {
+        html += `
+          <div class="mb-6 flex items-center gap-3">
+            <div class="h-px flex-1 bg-gradient-to-r from-transparent via-gold-500/30 to-transparent"></div>
+            <h2 class="text-gold-400 font-bold text-sm tracking-widest uppercase flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              Informasi Umum
+            </h2>
+            <div class="h-px flex-1 bg-gradient-to-r from-transparent via-gold-500/30 to-transparent"></div>
+          </div>
+        `;
+
+        manualItems.forEach(it => {
+          html += `
+            <div class="card-shine bg-emerald-800/30 backdrop-blur-sm rounded-2xl p-6 border border-emerald-700/40 hover:border-gold-500/30 transition-all mb-6 animate-fade-in">
+              <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-emerald-950/50 flex items-center justify-center text-gold-400">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                   </div>
-                </td>
-              </tr>
-            `).join('');
-
-            container.insertAdjacentHTML('beforeend', `
-              <div class="card-shine bg-emerald-800/30 backdrop-blur-sm rounded-2xl border border-gold-500/20 overflow-hidden mb-8 animate-fade-in">
-                <div class="p-5 border-b border-emerald-700/30 bg-emerald-950/20 flex items-center justify-between">
                   <div>
-                    <h3 class="text-base font-bold text-white flex items-center gap-2">
-                      <svg class="w-5 h-5 text-gold-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                      ${it.title || 'Pengumuman Hasil Tasmi'}
-                    </h3>
-                    <p class="text-[10px] text-emerald-500/60 mt-1">${formatDateId(it.date)}</p>
+                    <h3 class="text-base font-bold text-white">${it.title || '-'}</h3>
+                    <p class="text-[10px] text-emerald-500/60">${formatDateId(it.date)}</p>
                   </div>
-                  <span class="px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest ${tagClass(it.tag)}">${it.tag || 'PENTING'}</span>
                 </div>
-                <div class="overflow-x-auto">
-                  <table class="w-full text-left border-collapse">
-                    <thead class="bg-emerald-900/60 text-[11px] uppercase tracking-widest text-emerald-400 border-b border-emerald-700/50">
-                      <tr>
-                        <th class="px-4 py-3 font-bold w-16">No</th>
-                        <th class="px-4 py-3 font-bold">Nama Siswa</th>
-                        <th class="px-4 py-3 font-bold">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody class="divide-y divide-emerald-700/20">
-                      ${tableRows}
-                    </tbody>
-                  </table>
-                </div>
-                ${it.body ? `<div class="p-4 bg-emerald-950/30 border-t border-emerald-700/20 text-emerald-200/70 text-xs italic whitespace-pre-line">${it.body}</div>` : ''}
+                <span class="px-2 py-1 rounded-full text-[10px] font-medium ${tagClass(it.tag)}">${it.tag || 'Info'}</span>
               </div>
-            `);
-          } else {
-            // Regular Info Announcement: Direct Box Style
-            // Pastikan ini adalah pengumuman manual (body-only), bukan data kelulusan yang nyasar
-            container.insertAdjacentHTML('beforeend', `
-              <div class="card-shine bg-emerald-800/30 backdrop-blur-sm rounded-2xl p-6 border border-emerald-700/40 hover:border-gold-500/30 transition-all mb-6">
-                <div class="flex items-center justify-between mb-4">
-                  <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-emerald-950/50 flex items-center justify-center text-gold-400">
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    </div>
-                    <div>
-                      <h3 class="text-base font-bold text-white">${it.title || '-'}</h3>
-                      <p class="text-[10px] text-emerald-500/60">${formatDateId(it.date)}</p>
-                    </div>
-                  </div>
-                  <span class="px-2 py-1 rounded-full text-[10px] font-medium ${tagClass(it.tag)}">${it.tag || 'Info'}</span>
-                </div>
-                <div class="text-emerald-200/80 text-sm leading-relaxed whitespace-pre-line">
-                  ${it.body || ''}
-                </div>
+              <div class="text-emerald-200/80 text-sm leading-relaxed whitespace-pre-line">
+                ${it.body || ''}
               </div>
-            `);
-          }
+            </div>
+          `;
         });
+      }
+
+      // 2. Render Informasi Kelulusan Siswa (Merged Table)
+      if (graduationItems.length > 0) {
+        // Gabungkan semua studentResults dari semua graduationItems
+        let allStudentResults = [];
+        const allPeriods = new Set();
+        
+        graduationItems.forEach(it => {
+          it.studentResults.forEach(res => {
+            // Coba ambil periode dari jadwal (schedules) atau gunakan periode dari pengumuman jika ada
+            const schedule = schedules.find(s => s.studentId === res.studentId);
+            const period = res.period || schedule?.period || 'Lainnya';
+            allPeriods.add(period);
+            
+            allStudentResults.push({
+              ...res,
+              period,
+              announcementId: it.id,
+              announcementDate: it.date
+            });
+          });
+        });
+
+        // Urutkan periode (terbaru dulu)
+        const sortedPeriods = [...allPeriods].sort().reverse();
+
+        // Filter hasil siswa berdasarkan pencarian dan periode
+        if (searchTerm) {
+          allStudentResults = allStudentResults.filter(r => (r.studentName || '').toLowerCase().includes(searchTerm));
+        }
+        if (selectedPeriod !== 'all') {
+          allStudentResults = allStudentResults.filter(r => r.period === selectedPeriod);
+        }
+
+        // Urutkan berdasarkan tanggal pengumuman terbaru
+        allStudentResults.sort((a, b) => String(b.announcementDate || '').localeCompare(String(a.announcementDate || '')));
+
+        const tableRows = allStudentResults.map((res, idx) => `
+          <tr class="hover:bg-emerald-800/40 transition-colors group cursor-pointer border-b border-emerald-700/30 last:border-0" onclick="openGraduationDetailModal('${res.studentId}', '${res.announcementId}')">
+            <td class="px-4 py-3 text-emerald-400 font-mono text-xs">${idx + 1}.</td>
+            <td class="px-4 py-3">
+              <div class="flex flex-col">
+                <span class="text-white text-sm font-medium group-hover:text-gold-400 transition-colors">${res.studentName}</span>
+                <span class="text-[9px] text-emerald-500/60 font-medium uppercase tracking-widest mt-0.5">${res.period}</span>
+              </div>
+            </td>
+            <td class="px-4 py-3">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-emerald-200/60 text-[11px] group-hover:text-emerald-200 transition-colors">Lihat detail untuk mengetahui kelulusan siswa atau tidak</span>
+                <svg class="w-4 h-4 text-emerald-500/30 group-hover:text-gold-500 transition-all transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+              </div>
+            </td>
+          </tr>
+        `).join('');
+
+        html += `
+          <div class="mt-10 mb-6 flex items-center gap-3">
+            <div class="h-px flex-1 bg-gradient-to-r from-transparent via-gold-500/30 to-transparent"></div>
+            <h2 class="text-gold-400 font-bold text-sm tracking-widest uppercase flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              Informasi Kelulusan Siswa
+            </h2>
+            <div class="h-px flex-1 bg-gradient-to-r from-transparent via-gold-500/30 to-transparent"></div>
+          </div>
+
+          <div class="flex flex-col md:flex-row gap-4 mb-4">
+            <div class="relative flex-1">
+              <input type="text" id="public-grad-search" class="w-full pl-10 pr-4 py-3 bg-emerald-950/40 border border-emerald-700/50 rounded-2xl text-white placeholder-emerald-500/50 focus:border-gold-500 focus:outline-none text-sm transition-all" placeholder="Cari nama siswa..." value="${searchTerm.replace(/"/g, '&quot;')}">
+              <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500/50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </div>
+            <div class="flex items-center gap-2 bg-emerald-950/40 border border-emerald-700/50 rounded-2xl px-4 py-2 shrink-0">
+              <span class="text-emerald-300 text-[10px] font-bold uppercase tracking-widest">Periode:</span>
+              <select id="public-grad-period" class="bg-transparent text-white text-xs focus:outline-none cursor-pointer font-medium min-w-[120px]">
+                <option value="all" ${selectedPeriod === 'all' ? 'selected' : ''}>Semua Periode</option>
+                ${sortedPeriods.map(p => `<option value="${p}" ${selectedPeriod === p ? 'selected' : ''}>${p}</option>`).join('')}
+              </select>
+            </div>
+          </div>
+
+          <div class="card-shine bg-emerald-800/30 backdrop-blur-sm rounded-2xl border border-gold-500/20 overflow-hidden mb-8 animate-fade-in">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead class="bg-emerald-900/60 text-[11px] uppercase tracking-widest text-emerald-400 border-b border-emerald-700/50">
+                  <tr>
+                    <th class="px-4 py-3 font-bold w-16">No</th>
+                    <th class="px-4 py-3 font-bold">Nama Siswa</th>
+                    <th class="px-4 py-3 font-bold">Status</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-emerald-700/20">
+                  ${tableRows || `<tr><td colspan="3" class="px-4 py-10 text-center text-emerald-500/50 italic text-sm">Tidak ada siswa yang ditemukan.</td></tr>`}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+
+      // Add event listeners for search and period filter (Delegation on container)
+      const newSearch = document.getElementById('public-grad-search');
+      const newPeriod = document.getElementById('public-grad-period');
+      
+      newSearch?.addEventListener('input', () => {
+        // Render ulang tapi jaga focus
+        renderPublicAnnouncements();
+        document.getElementById('public-grad-search')?.focus();
+        // Set kursor ke akhir
+        const input = document.getElementById('public-grad-search');
+        if (input) {
+          const val = input.value;
+          input.value = '';
+          input.value = val;
+        }
+      });
+      newPeriod?.addEventListener('change', () => renderPublicAnnouncements());
     }
 
     function viewCertificatePublic(studentId, studentName) {
@@ -1652,6 +1738,12 @@
       const searchInput = document.getElementById('ann-search');
       if (!wrap) return;
 
+      const tagClass = (tag) => {
+        if (tag === 'Penting') return 'bg-red-500/20 text-red-400';
+        if (tag === 'Kegiatan') return 'bg-blue-500/20 text-blue-400';
+        return 'bg-green-500/20 text-green-400';
+      };
+
       const searchTerm = (searchInput?.value || '').toLowerCase().trim();
       let list = (announcements || [])
         .slice()
@@ -1673,20 +1765,30 @@
 
       list.forEach(it => {
         wrap.insertAdjacentHTML('beforeend', `
-          <div class="p-3 rounded-xl bg-emerald-950/30 border border-emerald-700/40 flex items-center justify-between gap-4 group hover:border-emerald-600/60 transition-colors">
-            <div class="flex items-center gap-3 overflow-hidden">
-              <input type="checkbox" class="ann-checkbox w-4 h-4 rounded border-emerald-700 bg-emerald-900/50 text-gold-500 focus:ring-gold-500/20 cursor-pointer" data-id="${it.id}">
-              <div class="overflow-hidden">
-                <div class="flex items-baseline gap-2">
-                  <div class="text-white font-semibold text-sm truncate">${it.title || '-'}</div>
-                  <div class="text-emerald-200/50 text-[10px] whitespace-nowrap">${it.tag || 'Info'} · ${formatDateId(it.date)}</div>
+          <div class="p-3 rounded-2xl bg-emerald-950/40 border border-emerald-700/30 flex items-center justify-between gap-4 group hover:border-gold-500/20 hover:bg-emerald-950/60 transition-all duration-300 w-full overflow-hidden">
+            <div class="flex items-center gap-4 overflow-hidden min-w-0 flex-1">
+              <div class="flex items-center justify-center shrink-0">
+                <input type="checkbox" class="ann-checkbox w-4 h-4 rounded-lg border-emerald-700 bg-emerald-900/50 text-gold-500 focus:ring-gold-500/20 cursor-pointer transition-all" data-id="${it.id}">
+              </div>
+              <div class="overflow-hidden min-w-0 flex-1">
+                <div class="flex items-center gap-2 mb-0.5">
+                  <span class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest ${tagClass(it.tag)} shrink-0">${it.tag || 'Info'}</span>
+                  <div class="text-white font-bold text-xs truncate group-hover:text-gold-400 transition-colors">${it.title || '-'}</div>
                 </div>
-                <div class="text-emerald-200/70 text-xs truncate mt-0.5">${it.body || ''}</div>
+                <div class="flex items-center gap-2 overflow-hidden">
+                  <span class="text-[10px] text-emerald-500/60 font-medium shrink-0">${formatDateId(it.date)}</span>
+                  <div class="h-1 w-1 rounded-full bg-emerald-800 shrink-0"></div>
+                  <div class="text-emerald-200/50 text-[11px] truncate italic flex-1 min-w-0">${it.body || ''}</div>
+                </div>
               </div>
             </div>
-            <div class="shrink-0 flex gap-1.5">
-              <button class="ann-action px-2.5 py-1 text-[11px] font-medium rounded-lg border border-gold-500/30 text-gold-200 hover:bg-gold-500/10 hover:border-gold-500/50 transition-all" data-id="${it.id}" data-action="edit">Edit</button>
-              <button class="ann-action px-2.5 py-1 text-[11px] font-medium rounded-lg border border-red-500/30 text-red-200 hover:bg-red-500/10 hover:border-red-500/50 transition-all" data-id="${it.id}" data-action="delete">Hapus</button>
+            <div class="shrink-0 flex items-center gap-2">
+              <button class="ann-action p-2 rounded-xl text-emerald-400 hover:text-gold-400 hover:bg-emerald-800/50 transition-all" data-id="${it.id}" data-action="edit" title="Edit">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+              </button>
+              <button class="ann-action p-2 rounded-xl text-emerald-400 hover:text-red-400 hover:bg-red-500/10 transition-all" data-id="${it.id}" data-action="delete" title="Hapus">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              </button>
             </div>
           </div>
         `);
@@ -3091,9 +3193,15 @@
       const idEl = document.getElementById('ann-id');
       const title = (document.getElementById('ann-title')?.value || '').trim();
       const tag = (document.getElementById('ann-tag')?.value || 'Info').trim();
-      const date = (document.getElementById('ann-date')?.value || '').trim();
+      let date = (document.getElementById('ann-date')?.value || '').trim();
       const body = (document.getElementById('ann-body')?.value || '').trim();
-      if (!title || !date || !body) return;
+      
+      // Jika tanggal kosong (pengumuman baru), gunakan tanggal hari ini
+      if (!date) {
+        date = new Date().toISOString().split('T')[0];
+      }
+      
+      if (!title || !body) return;
       
       const id = idEl?.value || '';
       if (id) {

@@ -282,7 +282,7 @@
           </nav>
          </aside>
 
-         <div class="p-6 md:p-8">
+         <div class="p-6 md:p-8 min-w-0">
           <div id="operator-tab-registration-settings" class="operator-tab hidden">
            <h3 class="text-xl font-bold text-white mb-2">Pengaturan Pendaftaran</h3>
            <p class="text-emerald-200/70 text-sm mb-6">Kelola status aktif/nonaktif formulir pendaftaran.</p>
@@ -656,46 +656,47 @@
           <div id="operator-tab-announcements" class="operator-tab hidden">
            <h3 class="text-xl font-bold text-white mb-2">Kelola Pengumuman</h3>
            <p class="text-emerald-200/70 text-sm mb-6">Data di sini akan mengganti pengumuman publik.</p>
-           <form id="ann-form" class="card-shine bg-emerald-900/30 rounded-2xl p-4 border border-emerald-700/40 mb-4">
+           <form id="ann-form" class="card-shine bg-emerald-900/30 rounded-2xl p-4 border border-emerald-700/40 mb-6">
             <input type="hidden" id="ann-id">
-            <div class="grid md:grid-cols-2 gap-3">
-             <div class="md:col-span-2">
-              <label class="block text-emerald-200 mb-1 text-sm font-medium" for="ann-title">Judul</label>
-              <input id="ann-title" class="input-field w-full px-3 py-2 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white text-sm focus:border-gold-500 focus:outline-none" required>
+            <div class="grid md:grid-cols-12 gap-3">
+             <div class="md:col-span-8">
+              <label class="block text-emerald-200 mb-1 text-[11px] font-medium uppercase tracking-wider" for="ann-title">Judul</label>
+              <input id="ann-title" class="input-field w-full px-3 py-2 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white text-sm focus:border-gold-500 focus:outline-none transition-all" required placeholder="Judul pengumuman...">
              </div>
-             <div>
-              <label class="block text-emerald-200 mb-1 text-sm font-medium" for="ann-tag">Tag</label>
-              <select id="ann-tag" class="input-field w-full px-3 py-2 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white text-sm focus:border-gold-500 focus:outline-none">
+             <div class="md:col-span-4">
+              <label class="block text-emerald-200 mb-1 text-[11px] font-medium uppercase tracking-wider" for="ann-tag">Tag</label>
+              <select id="ann-tag" class="input-field w-full px-3 py-2 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white text-sm focus:border-gold-500 focus:outline-none transition-all cursor-pointer">
                <option value="Info">Info</option>
                <option value="Penting">Penting</option>
                <option value="Kegiatan">Kegiatan</option>
               </select>
              </div>
-             <div>
-              <label class="block text-emerald-200 mb-1 text-sm font-medium" for="ann-date">Tanggal</label>
-              <input id="ann-date" type="date" class="input-field w-full px-3 py-2 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white text-sm focus:border-gold-500 focus:outline-none" required>
+             <div class="md:col-span-12">
+              <label class="block text-emerald-200 mb-1 text-[11px] font-medium uppercase tracking-wider" for="ann-body">Isi Pengumuman</label>
+              <textarea id="ann-body" rows="2" class="input-field w-full px-3 py-2 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white text-sm focus:border-gold-500 focus:outline-none resize-none transition-all" required placeholder="Tulis isi pengumuman di sini..."></textarea>
              </div>
-             <div class="md:col-span-2">
-              <label class="block text-emerald-200 mb-1 text-sm font-medium" for="ann-body">Isi</label>
-              <textarea id="ann-body" rows="2" class="input-field w-full px-3 py-2 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white text-sm focus:border-gold-500 focus:outline-none resize-none" required></textarea>
-             </div>
+             <input id="ann-date" type="hidden">
             </div>
-            <div class="flex gap-2 mt-4">
-             <button type="submit" class="px-4 py-2 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 text-emerald-950 text-sm font-semibold hover:from-gold-400 hover:to-gold-500 transition">Simpan</button>
-             <button type="button" id="ann-reset" class="px-4 py-2 rounded-xl border border-emerald-700/60 text-emerald-100 text-sm hover:border-gold-500/40 transition">Reset</button>
+            <div class="flex items-center justify-between mt-4">
+             <div class="flex gap-2">
+              <button type="submit" class="px-5 py-2 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 text-emerald-950 text-xs font-bold hover:from-gold-400 hover:to-gold-500 transition-all shadow-lg shadow-gold-500/10">Simpan</button>
+              <button type="button" id="ann-reset" class="px-5 py-2 rounded-xl border border-emerald-700/60 text-emerald-100 text-xs font-semibold hover:border-gold-500/40 transition-all">Reset</button>
+             </div>
+             <div id="ann-bulk-actions" class="hidden flex items-center gap-3 bg-emerald-950/40 px-3 py-1.5 rounded-xl border border-red-500/20">
+              <span id="ann-selected-count" class="text-[10px] text-emerald-400 font-bold uppercase tracking-widest">0 Terpilih</span>
+              <button id="ann-bulk-delete" class="text-red-400 hover:text-red-300 text-[10px] font-bold uppercase tracking-widest transition-colors">Hapus Semua</button>
+             </div>
             </div>
            </form>
-           <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-            <div class="relative flex-1 max-w-md">
-             <input type="text" id="ann-search" class="w-full pl-10 pr-4 py-2.5 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white placeholder-emerald-500 focus:border-gold-500 focus:outline-none text-xs" placeholder="Cari pengumuman...">
-             <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+
+           <div class="flex items-center gap-3 mb-4">
+            <div class="relative flex-1 max-w-xs">
+             <input type="text" id="ann-search" class="w-full pl-9 pr-4 py-2 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white placeholder-emerald-500/50 focus:border-gold-500 focus:outline-none text-[11px] transition-all" placeholder="Cari pengumuman...">
+             <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-emerald-500/60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
             </div>
-            <div id="ann-bulk-actions" class="hidden flex items-center gap-2">
-             <span id="ann-selected-count" class="text-xs text-emerald-400 font-medium">0 terpilih</span>
-             <button id="ann-bulk-delete" class="px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-semibold hover:bg-red-500/20 transition">Hapus Terpilih</button>
-            </div>
+            <div class="h-px flex-1 bg-emerald-800/20"></div>
            </div>
-           <div id="ann-list" class="space-y-3"></div>
+           <div id="ann-list" class="space-y-3 w-full overflow-hidden"></div>
           </div>
 
           <div id="operator-tab-certificates" class="operator-tab hidden">
@@ -976,8 +977,8 @@
         </div>
        </div>
        <div>
-        <label class="block text-emerald-200 mb-2 font-medium" for="student-period">Periode / Tahun Ajaran</label>
-        <input id="student-period" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none" placeholder="Contoh: 2024/2025 Genap">
+        <label class="block text-emerald-200 mb-2 font-medium" for="student-period">Periode Tasmi</label>
+        <input id="student-period" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none" placeholder="Contoh: Maret 2025">
        </div>
        <div>
         <label class="block text-emerald-200 mb-2 font-medium" for="student-notes">Catatan</label>
