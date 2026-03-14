@@ -225,14 +225,44 @@
     <section id="page-pengumuman" class="page-section hidden">
      <div class="py-16 px-4">
       <div class="max-w-4xl mx-auto">
+       <!-- Pengumuman Informasi Manual -->
        <div class="text-center mb-12">
-        <h2 class="star-decoration text-3xl md:text-4xl font-bold text-white mb-4">Pengumuman</h2>
+        <h2 class="star-decoration text-3xl md:text-4xl font-bold text-white mb-4">Informasi Umum</h2>
         <div class="geometric-border w-32 mx-auto mb-4"></div>
-        <p class="text-emerald-200/70">Informasi terbaru seputar program Tasmi'</p>
+        <p class="text-emerald-200/70">Berita dan kegiatan terbaru yang diunggah oleh operator</p>
        </div>
-       <div id="public-announcements-container" class="space-y-6">
+       <div id="public-announcements-container" class="space-y-6 mb-20">
         <div class="text-center py-10 card-shine bg-emerald-800/30 rounded-2xl border border-gold-500/20">
           <p class="text-emerald-200/70">Belum ada pengumuman terbaru.</p>
+        </div>
+       </div>
+
+       <!-- Papan Pengumuman Kelulusan Otomatis -->
+       <div class="mb-12 pt-10 border-t border-emerald-800/30">
+        <h3 class="text-xl font-semibold text-gold-400 mb-6 flex items-center gap-2">
+         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+         Papan Pengumuman Kelulusan Siswa
+        </h3>
+        <div class="card-shine bg-emerald-900/30 rounded-2xl border border-emerald-700/40 overflow-hidden shadow-xl">
+         <div class="overflow-x-auto">
+          <table class="min-w-full text-sm">
+           <thead class="bg-emerald-950/60 text-emerald-200">
+            <tr>
+             <th class="px-6 py-4 text-left font-bold uppercase tracking-wider w-16">No</th>
+             <th class="px-6 py-4 text-left font-bold uppercase tracking-wider">Nama Siswa</th>
+             <th class="px-6 py-4 text-left font-bold uppercase tracking-wider">Status</th>
+            </tr>
+           </thead>
+           <tbody id="graduation-announcement-table" class="divide-y divide-emerald-700/40 bg-emerald-900/10">
+            <!-- Data kelulusan akan muncul di sini -->
+            <tr>
+             <td colspan="3" class="px-6 py-10 text-center text-emerald-200/50 italic">
+              Memuat data kelulusan...
+             </td>
+            </tr>
+           </tbody>
+          </table>
+         </div>
         </div>
        </div>
       </div>

@@ -317,6 +317,7 @@
           onDataChanged(data) {
             schedules = data;
             renderPublicSchedule();
+            renderGraduationBoard();
             if (isOperatorLoggedIn()) {
               renderScheduleAdmin();
               renderGraduationTable();
@@ -722,10 +723,30 @@
     };
 
     window.openGraduationDetailModal = function(studentId, announcementId) {
-      const ann = (announcements || []).find(a => a.id === announcementId);
-      if (!ann || !ann.studentResults) return;
-      
-      const res = ann.studentResults.find(r => r.studentId === studentId);
+      let res = null;
+      let date = '-';
+
+      if (announcementId) {
+        const ann = (announcements || []).find(a => a.id === announcementId);
+        if (ann && ann.studentResults) {
+          res = ann.studentResults.find(r => r.studentId === studentId);
+          date = ann.date;
+        }
+      } else {
+        // Find from schedules if no announcementId provided (from graduation board)
+        const schedule = (schedules || []).find(s => s.studentId === studentId && s.graduationStatus === 'Lulus');
+        if (schedule) {
+          res = {
+            studentId: schedule.studentId,
+            studentName: schedule.studentName,
+            status: schedule.graduationStatus,
+            juz: schedule.juz || '-',
+            motivation: null
+          };
+          date = schedule.date;
+        }
+      }
+
       if (!res) return;
 
       const modal = document.getElementById('graduation-detail-modal');
@@ -746,7 +767,7 @@
       statusEl.className = `text-lg font-semibold uppercase tracking-widest ${isPassed ? 'text-emerald-400' : 'text-red-400'}`;
       
       juzEl.textContent = res.juz || '-';
-      dateEl.textContent = formatDateId(ann.date);
+      dateEl.textContent = formatDateId(date);
       motivationEl.textContent = res.motivation || (isPassed ? "Barakallahu fiikum! Teruslah menjaga hafalanmu." : "Jangan menyerah! Setiap ayat yang dihafal adalah pahala yang besar.");
       
       // Icons
@@ -798,6 +819,48 @@
       modal.classList.remove('hidden');
       document.body.classList.add('overflow-hidden');
     };
+
+    function renderGraduationBoard() {
+      const tbody = document.getElementById('graduation-announcement-table');
+      if (!tbody) return;
+
+      // Ambil data kelulusan dari schedules
+      const graduated = (schedules || [])
+        .filter(s => s.graduationStatus === 'Lulus')
+        .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+
+      if (graduated.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="3" class="px-6 py-10 text-center text-emerald-200/50 italic">
+              Belum ada pengumuman kelulusan terbaru.
+            </td>
+          </tr>`;
+        return;
+      }
+
+      tbody.innerHTML = graduated.map((s, idx) => `
+        <tr class="hover:bg-emerald-800/20 transition-all group cursor-pointer" onclick="openGraduationDetailModal('${s.studentId}', null)">
+          <td class="px-6 py-4 text-emerald-200 font-medium">${idx + 1}.</td>
+          <td class="px-6 py-4">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full bg-emerald-950/50 flex items-center justify-center text-gold-400 group-hover:scale-110 transition-transform">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+              </div>
+              <span class="text-white font-bold group-hover:text-gold-400 transition-colors">${s.studentName}</span>
+            </div>
+          </td>
+          <td class="px-6 py-4">
+            <div class="flex items-center justify-between">
+              <span class="text-emerald-300/80 text-xs italic group-hover:text-gold-300 transition-colors">
+                Lihat detail (klik untuk melihat detail kelulusan)
+              </span>
+              <svg class="w-5 h-5 text-emerald-500/30 group-hover:text-gold-500 transform group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
 
     function renderPublicAnnouncements() {
       const container = document.getElementById('public-announcements-container');
@@ -3453,6 +3516,7 @@
         applyHomepageSettings();
         applyRegistrationSettings();
         renderPublicSchedule();
+        renderGraduationBoard();
         renderPublicAnnouncements();
       } catch (err) {
         console.error('Initialization error:', err);
