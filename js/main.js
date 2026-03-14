@@ -329,7 +329,7 @@
           onDataChanged(data) {
             announcements = data;
             renderPublicAnnouncements();
-            renderGraduationBoard();
+            if (window.renderGraduationBoard) window.renderGraduationBoard();
             if (isOperatorLoggedIn()) renderAnnouncementsAdmin();
           }
         });
@@ -820,7 +820,7 @@
       document.body.classList.add('overflow-hidden');
     };
 
-    function renderGraduationBoard() {
+    window.renderGraduationBoard = function() {
       const tbody = document.getElementById('graduation-announcement-table');
       const searchInput = document.getElementById('grad-search-input');
       const periodFilter = document.getElementById('grad-period-filter');
@@ -1691,16 +1691,22 @@
       wrap.innerHTML = '';
       if (list.length === 0) {
         wrap.innerHTML = `<div class="text-emerald-200/70 text-sm">Belum ada pengumuman. Tambahkan dari form di atas.</div>`;
+        updateAnnBulkActions();
         return;
       }
 
       list.forEach(it => {
         wrap.insertAdjacentHTML('beforeend', `
-          <div class="p-4 rounded-xl bg-emerald-950/30 border border-emerald-700/40 flex items-start justify-between gap-4">
-            <div>
-              <div class="text-white font-semibold">${it.title || '-'}</div>
-              <div class="text-emerald-200/70 text-xs mt-1">${it.tag || 'Info'} · ${formatDateId(it.date)}</div>
-              <div class="text-emerald-200/80 text-sm mt-2">${it.body || ''}</div>
+          <div class="p-4 rounded-xl bg-emerald-950/30 border border-emerald-700/40 flex items-start justify-between gap-4 group">
+            <div class="flex items-start gap-4">
+              <div class="mt-1">
+                <input type="checkbox" class="ann-checkbox w-5 h-5 rounded border-emerald-700 bg-emerald-900/50 text-gold-500 focus:ring-gold-500/30 cursor-pointer transition-all" data-id="${it.id}">
+              </div>
+              <div>
+                <div class="text-white font-semibold group-hover:text-gold-400 transition-colors">${it.title || '-'}</div>
+                <div class="text-emerald-200/70 text-xs mt-1">${it.tag || 'Info'} · ${formatDateId(it.date)}</div>
+                <div class="text-emerald-200/80 text-sm mt-2 line-clamp-2">${it.body || ''}</div>
+              </div>
             </div>
             <div class="shrink-0 whitespace-nowrap">
               <button class="ann-action px-3 py-1 rounded-lg border border-gold-500/40 text-gold-200 hover:bg-gold-500/10 transition" data-id="${it.id}" data-action="edit">Edit</button>
@@ -1709,7 +1715,54 @@
           </div>
         `);
       });
+
+      // Add checkbox event listeners
+      document.querySelectorAll('.ann-checkbox').forEach(cb => {
+        cb.addEventListener('change', updateAnnBulkActions);
+      });
+      updateAnnBulkActions();
     }
+
+    function updateAnnBulkActions() {
+      const selected = document.querySelectorAll('.ann-checkbox:checked');
+      const actionsDiv = document.getElementById('ann-bulk-actions');
+      const countEl = document.getElementById('ann-selected-count');
+      
+      if (!actionsDiv || !countEl) return;
+
+      if (selected.length > 0) {
+        actionsDiv.classList.remove('hidden');
+        countEl.textContent = `${selected.length} terpilih`;
+      } else {
+        actionsDiv.classList.add('hidden');
+      }
+    }
+
+    document.getElementById('ann-bulk-delete-btn')?.addEventListener('click', async () => {
+      const selected = document.querySelectorAll('.ann-checkbox:checked');
+      if (selected.length === 0) return;
+
+      const confirmed = await showConfirmationModal({
+        title: `Hapus ${selected.length} Pengumuman?`,
+        body: `Anda yakin ingin menghapus ${selected.length} pengumuman terpilih sekaligus? Tindakan ini tidak dapat dibatalkan.`
+      });
+
+      if (!confirmed) return;
+
+      showToast(`Menghapus ${selected.length} data...`, 'info');
+      
+      try {
+        for (const cb of selected) {
+          const id = cb.dataset.id;
+          await window.dataSdk?.remove?.('announcements', id);
+        }
+        showToast('Pengumuman terpilih berhasil dihapus.', 'success');
+        renderAnnouncementsAdmin();
+      } catch (err) {
+        console.error('Bulk delete error:', err);
+        showToast('Terjadi kesalahan saat menghapus beberapa data.', 'error');
+      }
+    });
 
     function downloadJson(filename, obj) {
       const blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json' });
