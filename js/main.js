@@ -48,6 +48,7 @@
     let congratulationsEntriesPerPage = 10;
     let certificatesCurrentPage = 1;
     let certificatesEntriesPerPage = 10;
+    let graduationChart = null;
     let certificates = {}; // Cloud-only
     let congratulations = {}; // Cloud-only
     if (!certificates || Array.isArray(certificates)) certificates = {};
@@ -321,6 +322,7 @@
         await window.dataSdk.subscribe('students', {
           onDataChanged(data) {
             students = data;
+            renderGraduationChart();
             renderGraduatedDataPublic();
             if (isOperatorLoggedIn()) {
               renderStudents();
@@ -334,6 +336,7 @@
             schedules = data;
             renderPublicSchedule();
             renderGraduatedDataPublic();
+            renderGraduationChart();
             if (isOperatorLoggedIn()) {
               renderScheduleAdmin();
               renderGraduationTable();
@@ -704,7 +707,7 @@
         let statusLabel = 'Terjadwal';
         let statusClass = 'bg-gold-500/20 text-gold-400';
         
-        if (status) { // graduationStatus is set (Lulus/Tidak Lulus)
+        if (status) { // graduationStatus is set (Lulus/Mengulang)
           statusLabel = 'Selesai';
           statusClass = 'bg-green-500/20 text-green-400';
         } else if (date === today) {
@@ -852,6 +855,80 @@
       modal.classList.remove('hidden');
       document.body.classList.add('overflow-hidden');
     };
+
+    function renderGraduationChart() {
+      const canvas = document.getElementById('graduationChart');
+      if (!canvas) return;
+
+      const lulusCount = (students || []).filter(s => s.graduationStatus === 'Lulus').length;
+      const mengulangCount = (students || []).filter(s => s.graduationStatus === 'Mengulang').length;
+      const totalCount = (students || []).length;
+      const gradRate = totalCount > 0 ? Math.round((lulusCount / totalCount) * 100) : 0;
+
+      // Update static counts
+      const elLulus = document.getElementById('stat-count-lulus');
+      const elMengulang = document.getElementById('stat-count-mengulang');
+      const elTotal = document.getElementById('stat-total-students');
+      const elRate = document.getElementById('stat-graduation-rate');
+
+      if (elLulus) elLulus.textContent = lulusCount;
+      if (elMengulang) elMengulang.textContent = mengulangCount;
+      if (elTotal) elTotal.textContent = totalCount;
+      if (elRate) elRate.textContent = `${gradRate}%`;
+
+      const data = {
+        labels: ['Lulus', 'Mengulang', 'Belum Dinilai'],
+        datasets: [{
+          data: [lulusCount, mengulangCount, totalCount - lulusCount - mengulangCount],
+          backgroundColor: [
+            '#10b981', // emerald-500
+            '#f59e0b', // amber-500
+            '#334155'  // slate-700
+          ],
+          borderColor: '#064e3b', // emerald-950
+          borderWidth: 2,
+          hoverOffset: 10
+        }]
+      };
+
+      if (graduationChart) {
+        graduationChart.data = data;
+        graduationChart.update();
+      } else {
+        graduationChart = new Chart(canvas, {
+          type: 'doughnut',
+          data: data,
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '70%',
+            plugins: {
+              legend: {
+                display: false
+              },
+              tooltip: {
+                backgroundColor: '#064e3b',
+                titleColor: '#fbbf24',
+                bodyColor: '#ecfdf5',
+                borderColor: '#fbbf24',
+                borderWidth: 1,
+                padding: 12,
+                displayColors: false,
+                callbacks: {
+                  label: function(context) {
+                    const label = context.label || '';
+                    const value = context.raw || 0;
+                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                    const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                    return `${label}: ${value} (${percentage}%)`;
+                  }
+                }
+              }
+            }
+          }
+        });
+      }
+    }
 
     function renderPublicAnnouncements() {
       const container = document.getElementById('public-announcements-container');
@@ -1562,7 +1639,7 @@
         const student = (students || []).find(s => s.id === it.studentId);
         const statusPill = (st) => {
           if (st === 'Lulus') return '<span class="px-2 py-1 rounded-full text-[10px] bg-green-500/20 text-green-300">Lulus</span>';
-          return '<span class="px-2 py-1 rounded-full text-[10px] bg-red-500/20 text-red-300">Tidak Lulus</span>';
+          return '<span class="px-2 py-1 rounded-full text-[10px] bg-orange-500/20 text-orange-300">Mengulang</span>';
         };
 
         tbody.insertAdjacentHTML('beforeend', `
@@ -1609,7 +1686,7 @@
         const pentasmi = (pentasmiAccounts || []).find(p => p.id === it.teacherId);
         const statusPill = (st) => {
           if (st === 'Lulus') return '<span class="px-2 py-1 rounded-full text-[10px] bg-green-500/20 text-green-300">Lulus</span>';
-          return '<span class="px-2 py-1 rounded-full text-[10px] bg-red-500/20 text-red-300">Tidak Lulus</span>';
+          return '<span class="px-2 py-1 rounded-full text-[10px] bg-orange-500/20 text-orange-300">Mengulang</span>';
         };
 
         tbody.insertAdjacentHTML('beforeend', `
@@ -1867,7 +1944,7 @@
       paginatedList.forEach((s, index) => {
         const getStatusColor = (st) => {
           if (st === 'Lulus') return 'text-green-400 border-green-500/30 bg-green-500/10';
-          if (st === 'Tidak Lulus') return 'text-red-400 border-red-500/30 bg-red-500/10';
+          if (st === 'Mengulang') return 'text-orange-400 border-orange-500/30 bg-orange-500/10';
           return 'text-gold-300 border-emerald-700/50 bg-emerald-950/50';
         };
 
@@ -1875,7 +1952,7 @@
           <select class="student-grad-select ${getStatusColor(s.graduationStatus)} border rounded-lg px-2 py-1 text-[10px] focus:border-gold-500 focus:outline-none cursor-pointer transition-colors" data-id="${s.id}">
             <option value="Belum Dinilai" ${!s.graduationStatus || s.graduationStatus === 'Belum Dinilai' ? 'selected' : ''}>Belum Dinilai</option>
             <option value="Lulus" ${s.graduationStatus === 'Lulus' ? 'selected' : ''}>Lulus</option>
-            <option value="Tidak Lulus" ${s.graduationStatus === 'Tidak Lulus' ? 'selected' : ''}>Tidak Lulus</option>
+            <option value="Mengulang" ${s.graduationStatus === 'Mengulang' ? 'selected' : ''}>Mengulang</option>
           </select>
         `;
 
@@ -1886,7 +1963,7 @@
                <svg class="w-4 h-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
              </div>`;
 
-        const announceButton = (s.graduationStatus === 'Lulus' || s.graduationStatus === 'Tidak Lulus') 
+        const announceButton = (s.graduationStatus === 'Lulus' || s.graduationStatus === 'Mengulang') 
           ? `<button class="student-action p-2 rounded-lg bg-emerald-800/50 text-blue-400 hover:bg-emerald-700 transition" data-id="${s.id}" data-action="announce-instant" title="Umumkan Langsung">
                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg>
              </button>`
@@ -2142,7 +2219,7 @@
 
         const getGradColor = (st) => {
           if (st === 'Lulus') return 'text-green-400 border-green-500/30 bg-green-500/10';
-          if (st === 'Tidak Lulus') return 'text-red-400 border-red-500/30 bg-red-500/10';
+          if (st === 'Mengulang') return 'text-orange-400 border-orange-500/30 bg-orange-500/10';
           return 'text-gold-200 border-emerald-700/50 bg-emerald-950/50';
         };
 
@@ -2150,7 +2227,7 @@
           <select class="grad-status-select ${getGradColor(it.graduationStatus)} border rounded-lg px-2 py-1 text-[10px] focus:border-gold-500 focus:outline-none cursor-pointer transition-colors" data-id="${it.id}">
             <option value="Menunggu" ${!it.graduationStatus || it.graduationStatus === 'Menunggu' ? 'selected' : ''}>Menunggu</option>
             <option value="Lulus" ${it.graduationStatus === 'Lulus' ? 'selected' : ''}>Lulus</option>
-            <option value="Tidak Lulus" ${it.graduationStatus === 'Tidak Lulus' ? 'selected' : ''}>Tidak Lulus</option>
+            <option value="Mengulang" ${it.graduationStatus === 'Mengulang' ? 'selected' : ''}>Mengulang</option>
           </select>
         ` : `<span class="inline-flex px-3 py-1 rounded-full text-xs border ${statusPill(it.graduationStatus)}">${it.graduationStatus || 'Menunggu'}</span>`;
         
@@ -2168,7 +2245,7 @@
 
         const actionButtons = canDetermineGraduation ? `
           <button class="grad-action px-3 py-1 rounded-lg border border-green-500/40 text-green-300 hover:bg-green-500/10 transition" data-id="${it.id}" data-status="Lulus">Lulus</button>
-          <button class="grad-action px-3 py-1 rounded-lg border border-red-500/40 text-red-300 hover:bg-red-500/10 transition ml-2" data-id="${it.id}" data-status="Tidak Lulus">Tidak Lulus</button>
+          <button class="grad-action px-3 py-1 rounded-lg border border-orange-500/40 text-orange-300 hover:bg-orange-500/10 transition ml-2" data-id="${it.id}" data-status="Mengulang">Mengulang</button>
         ` : `
           <span class="text-emerald-400 text-xs">Tidak ada aksi</span>
         `;
@@ -2367,7 +2444,7 @@
       if (!confirmed) return;
 
       const passed = unannounced.filter(it => it.graduationStatus === 'Lulus');
-      const failed = unannounced.filter(it => it.graduationStatus === 'Tidak Lulus');
+      const failed = unannounced.filter(it => it.graduationStatus === 'Mengulang');
 
       let body = `Berikut adalah hasil kelulusan Tasmi' Al-Quran terbaru:\n\n`;
       
@@ -2843,7 +2920,7 @@
       );
       
       let list = (students || []).filter(s => 
-        (s.graduationStatus === 'Lulus' || passedFromSchedules.has(s.id)) && s.graduationStatus !== 'Tidak Lulus'
+        (s.graduationStatus === 'Lulus' || passedFromSchedules.has(s.id)) && s.graduationStatus !== 'Mengulang'
       );
 
       // Apply Search Filter
@@ -3096,7 +3173,7 @@
       );
       
       let passedStudents = (students || []).filter(s => 
-        (s.graduationStatus === 'Lulus' || passedFromSchedules.has(s.id)) && s.graduationStatus !== 'Tidak Lulus'
+        (s.graduationStatus === 'Lulus' || passedFromSchedules.has(s.id)) && s.graduationStatus !== 'Mengulang'
       );
 
       // Apply Search Filter
@@ -3879,7 +3956,7 @@
     });
 
     document.getElementById('students-bulk-pass')?.addEventListener('click', () => bulkUpdateGraduation('Lulus'));
-    document.getElementById('students-bulk-fail')?.addEventListener('click', () => bulkUpdateGraduation('Tidak Lulus'));
+    document.getElementById('students-bulk-fail')?.addEventListener('click', () => bulkUpdateGraduation('Mengulang'));
     document.getElementById('students-bulk-cancel')?.addEventListener('click', () => {
       selectedStudents.clear();
       renderStudents();
@@ -4069,12 +4146,12 @@
       if (action === 'set-graduation') {
         const confirmed = await showConfirmationModal({
           title: 'Tentukan Kelulusan?',
-          body: `Apakah ${item.name} dinyatakan Lulus atau Tidak Lulus dalam Tasmi ini?`,
+          body: `Apakah ${item.name} dinyatakan Lulus atau Mengulang dalam Tasmi ini?`,
           confirmText: 'Lulus'
         });
         
         // Modal returns true for confirm, false for cancel.
-        // But we want 3 states: Lulus, Tidak Lulus, or Cancel.
+        // But we want 3 states: Lulus, Mengulang, or Cancel.
         // Let's use a simpler approach with the existing modal by asking 2 separate questions if needed, 
         // OR better: customize the modal call to allow 2 specific confirm options.
         // Since my showConfirmationModal is simple, I'll ask: "Apakah Lulus?"
@@ -4083,15 +4160,15 @@
           await window.dataSdk?.update?.('students', id, { graduationStatus: 'Lulus' });
           showToast(`${item.name} dinyatakan Lulus.`, 'success');
         } else {
-          // If they cancelled, we might want to ask if they meant "Tidak Lulus"
+          // If they cancelled, we might want to ask if they meant "Mengulang"
           const failConfirmed = await showConfirmationModal({
             title: 'Tentukan Kelulusan?',
-            body: `Apakah ${item.name} dinyatakan TIDAK LULUS?`,
-            confirmText: 'Ya, Tidak Lulus'
+            body: `Apakah ${item.name} dinyatakan MENGULANG?`,
+            confirmText: 'Ya, Mengulang'
           });
           if (failConfirmed) {
-            await window.dataSdk?.update?.('students', id, { graduationStatus: 'Tidak Lulus' });
-            showToast(`${item.name} dinyatakan Tidak Lulus.`, 'error');
+            await window.dataSdk?.update?.('students', id, { graduationStatus: 'Mengulang' });
+            showToast(`${item.name} dinyatakan Mengulang.`, 'error');
           }
         }
         renderStudents();
@@ -4102,7 +4179,7 @@
         const isPassed = item.graduationStatus === 'Lulus';
         const defaultMotivation = isPassed 
           ? `Alhamdulillah, ananda ${item.name} telah dinyatakan LULUS dalam Tasmi' Al-Quran Juz ${item.juz || '-'}.\n\nSemoga menjadi motivasi untuk terus menjaga dan menambah hafalannya.`
-          : `Tetap semangat! Ananda ${item.name} dinyatakan TIDAK LULUS / MENGULANG dalam Tasmi' Al-Quran Juz ${item.juz || '-'}.\n\nJangan menyerah, setiap ayat yang dibaca adalah pahala yang besar. Teruslah murojaah.`;
+          : `Tetap semangat! Ananda ${item.name} dinyatakan MENGULANG dalam Tasmi' Al-Quran Juz ${item.juz || '-'}.\n\nJangan menyerah, setiap ayat yang dibaca adalah pahala yang besar. Teruslah murojaah.`;
         
         const confirmed = await showConfirmationModal({
           title: 'Umumkan Langsung?',
@@ -4814,6 +4891,7 @@
           renderPublicSchedule();
           renderPublicAnnouncements();
           renderGraduatedDataPublic();
+          renderGraduationChart();
           
           if (isOperatorLoggedIn()) {
             renderApprovalTable();
