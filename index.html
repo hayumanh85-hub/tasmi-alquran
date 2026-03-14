@@ -588,7 +588,11 @@
              <h3 class="text-xl font-bold text-white">Penentuan Kelulusan Tasmi</h3>
              <p class="text-emerald-200/70 text-sm mt-1">Tentukan kelulusan siswa untuk jadwal tasmi yang telah selesai.</p>
             </div>
-            <div class="flex flex-wrap gap-2">
+            <div class="flex flex-wrap items-center gap-2">
+             <div class="relative w-full md:w-64 mr-2">
+              <input type="text" id="graduation-search" class="w-full pl-10 pr-4 py-2.5 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white placeholder-emerald-500 focus:border-gold-500 focus:outline-none text-xs" placeholder="Cari nama siswa...">
+              <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+             </div>
              <div class="flex items-center gap-2 bg-emerald-900/40 border border-emerald-700/50 rounded-xl px-3 py-2 mr-2">
               <span class="text-emerald-300 text-xs font-medium">Periode:</span>
               <select id="graduation-period-filter" class="bg-transparent text-white text-xs focus:outline-none cursor-pointer">
@@ -603,7 +607,7 @@
             <table class="min-w-full text-sm">
              <thead class="bg-emerald-950/40 text-emerald-200">
               <tr>
-               <th class="text-left px-4 py-3">Tanggal</th>
+               <th class="text-left px-4 py-3">Periode</th>
                <th class="text-left px-4 py-3">Siswa</th>
                <th class="text-left px-4 py-3">Pentasmi</th>
                <th class="text-left px-4 py-3">Status</th>
@@ -681,6 +685,16 @@
              <button type="button" id="ann-reset" class="px-4 py-2 rounded-xl border border-emerald-700/60 text-emerald-100 text-sm hover:border-gold-500/40 transition">Reset</button>
             </div>
            </form>
+           <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+            <div class="relative flex-1 max-w-md">
+             <input type="text" id="ann-search" class="w-full pl-10 pr-4 py-2.5 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white placeholder-emerald-500 focus:border-gold-500 focus:outline-none text-xs" placeholder="Cari pengumuman...">
+             <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </div>
+            <div id="ann-bulk-actions" class="hidden flex items-center gap-2">
+             <span id="ann-selected-count" class="text-xs text-emerald-400 font-medium">0 terpilih</span>
+             <button id="ann-bulk-delete" class="px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-semibold hover:bg-red-500/20 transition">Hapus Terpilih</button>
+            </div>
+           </div>
            <div id="ann-list" class="space-y-3"></div>
           </div>
 
@@ -986,6 +1000,31 @@
        <div class="flex gap-3 pt-4">
         <button type="button" id="student-modal-cancel" class="flex-1 px-5 py-3 rounded-xl border border-emerald-700 text-emerald-100 font-semibold hover:bg-emerald-700/50 transition">Batal</button>
         <button type="submit" class="flex-1 px-5 py-3 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 text-emerald-950 font-bold hover:from-gold-400 hover:to-gold-500 transition shadow-lg shadow-gold-500/20">Simpan Data</button>
+       </div>
+      </form>
+     </div>
+    </div>
+   </div>
+
+   <!-- Edit Period Modal -->
+   <div id="period-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center p-4 bg-emerald-950/90 backdrop-blur-sm">
+    <div class="relative max-w-md w-full bg-gradient-to-b from-emerald-800 to-emerald-900 border border-gold-500/30 rounded-2xl shadow-2xl animate-fade-in scale-95 transition-transform duration-300" id="period-modal-dialog">
+     <div class="p-6">
+      <div class="flex items-center justify-between mb-6">
+       <h3 class="text-xl font-bold text-white">Edit Periode Kelulusan</h3>
+       <button id="period-modal-close" class="text-emerald-300 hover:text-gold-400 transition p-1">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+       </button>
+      </div>
+      <form id="period-form" class="space-y-4">
+       <input type="hidden" id="period-modal-id">
+       <div>
+        <label class="block text-emerald-200 mb-2 font-medium" for="period-month-year">Pilih Bulan & Tahun <span class="text-red-400">*</span></label>
+        <input id="period-month-year" type="month" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none" required>
+       </div>
+       <div class="flex gap-3 pt-4">
+        <button type="button" id="period-modal-cancel" class="flex-1 px-5 py-3 rounded-xl border border-emerald-700 text-emerald-100 font-semibold hover:bg-emerald-700/50 transition">Batal</button>
+        <button type="submit" class="flex-1 px-5 py-3 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 text-emerald-950 font-bold hover:from-gold-400 hover:to-gold-500 transition shadow-lg shadow-gold-500/20">Simpan Periode</button>
        </div>
       </form>
      </div>

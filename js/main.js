@@ -823,39 +823,47 @@
         .slice()
         .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')))
         .forEach(it => {
+          // Hanya tampilkan pengumuman bertipe kelulusan (isGraduation) yang memiliki studentResults
+          // ATAU pengumuman umum (bukan isGraduation) yang memang dibuat manual dari tab pengumuman
+          // Kita bisa membedakan berdasarkan field 'isGraduation' yang kita gunakan saat merender
           const isGraduation = it.studentResults && Array.isArray(it.studentResults) && it.studentResults.length > 0;
 
           if (isGraduation) {
-            // Graduation Announcement: Table Style
+            // Graduation Announcement: Table Style (No, Nama siswa, Status)
             const tableRows = it.studentResults.map((res, idx) => `
-              <tr class="hover:bg-emerald-800/20 transition-colors group cursor-pointer" onclick="openGraduationDetailModal('${res.studentId}', '${it.id}')">
+              <tr class="hover:bg-emerald-800/40 transition-colors group cursor-pointer border-b border-emerald-700/30 last:border-0" onclick="openGraduationDetailModal('${res.studentId}', '${it.id}')">
+                <td class="px-4 py-3 text-emerald-400 font-mono text-xs">${idx + 1}.</td>
                 <td class="px-4 py-3">
-                  <div class="flex items-center gap-3">
-                    <div class="w-1.5 h-1.5 rounded-full ${res.status === 'Lulus' ? 'bg-emerald-400' : 'bg-red-400'}"></div>
-                    <span class="text-white text-sm font-medium group-hover:text-gold-400 transition-colors">${res.studentName}</span>
-                  </div>
+                  <span class="text-white text-sm font-medium group-hover:text-gold-400 transition-colors">${res.studentName}</span>
                 </td>
-                <td class="px-4 py-3 text-right">
-                  <svg class="w-4 h-4 text-emerald-500/30 group-hover:text-gold-500 transition-colors inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                <td class="px-4 py-3">
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="text-emerald-200/60 text-[11px] group-hover:text-emerald-200 transition-colors">Lihat detail (klik untuk melihat hasil)</span>
+                    <div class="px-2 py-0.5 rounded text-[10px] ${res.status === 'Lulus' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'} font-bold uppercase tracking-wider">${res.status}</div>
+                  </div>
                 </td>
               </tr>
             `).join('');
 
             container.insertAdjacentHTML('beforeend', `
-              <div class="card-shine bg-emerald-800/30 backdrop-blur-sm rounded-2xl border border-gold-500/20 overflow-hidden mb-6">
+              <div class="card-shine bg-emerald-800/30 backdrop-blur-sm rounded-2xl border border-gold-500/20 overflow-hidden mb-8 animate-fade-in">
                 <div class="p-5 border-b border-emerald-700/30 bg-emerald-950/20 flex items-center justify-between">
                   <div>
-                    <h3 class="text-sm font-bold text-white">${it.title || 'Hasil Tasmi'}</h3>
-                    <p class="text-[10px] text-emerald-500/60 mt-0.5">${formatDateId(it.date)}</p>
+                    <h3 class="text-base font-bold text-white flex items-center gap-2">
+                      <svg class="w-5 h-5 text-gold-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                      ${it.title || 'Pengumuman Hasil Tasmi'}
+                    </h3>
+                    <p class="text-[10px] text-emerald-500/60 mt-1">${formatDateId(it.date)}</p>
                   </div>
-                  <span class="px-2 py-0.5 rounded-full text-[10px] font-medium ${tagClass(it.tag)}">${it.tag || 'Hasil'}</span>
+                  <span class="px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest ${tagClass(it.tag)}">${it.tag || 'PENTING'}</span>
                 </div>
-                <div class="overflow-hidden">
-                  <table class="w-full text-left">
-                    <thead class="bg-emerald-900/40 text-[10px] uppercase tracking-wider text-emerald-400">
+                <div class="overflow-x-auto">
+                  <table class="w-full text-left border-collapse">
+                    <thead class="bg-emerald-900/60 text-[11px] uppercase tracking-widest text-emerald-400 border-b border-emerald-700/50">
                       <tr>
-                        <th class="px-4 py-2 font-semibold">Nama Siswa</th>
-                        <th class="px-4 py-2 text-right">Detail</th>
+                        <th class="px-4 py-3 font-bold w-16">No</th>
+                        <th class="px-4 py-3 font-bold">Nama Siswa</th>
+                        <th class="px-4 py-3 font-bold">Status</th>
                       </tr>
                     </thead>
                     <tbody class="divide-y divide-emerald-700/20">
@@ -863,10 +871,12 @@
                     </tbody>
                   </table>
                 </div>
+                ${it.body ? `<div class="p-4 bg-emerald-950/30 border-t border-emerald-700/20 text-emerald-200/70 text-xs italic whitespace-pre-line">${it.body}</div>` : ''}
               </div>
             `);
           } else {
             // Regular Info Announcement: Direct Box Style
+            // Pastikan ini adalah pengumuman manual (body-only), bukan data kelulusan yang nyasar
             container.insertAdjacentHTML('beforeend', `
               <div class="card-shine bg-emerald-800/30 backdrop-blur-sm rounded-2xl p-6 border border-emerald-700/40 hover:border-gold-500/30 transition-all mb-6">
                 <div class="flex items-center justify-between mb-4">
@@ -1405,6 +1415,7 @@
       requireOperator();
       const tbody = document.getElementById('graduation-table');
       const periodFilter = document.getElementById('graduation-period-filter');
+      const searchInput = document.getElementById('graduation-search');
       if (!tbody) return;
 
       // Update period filter options from schedules
@@ -1416,10 +1427,16 @@
       }
 
       const selectedPeriod = periodFilter?.value || 'all';
+      const searchTerm = (searchInput?.value || '').toLowerCase().trim();
+
       let list = (schedules || []).slice();
       
       if (selectedPeriod !== 'all') {
         list = list.filter(s => s.period === selectedPeriod);
+      }
+
+      if (searchTerm) {
+        list = list.filter(s => (s.studentName || '').toLowerCase().includes(searchTerm));
       }
 
       const role = getLoggedInRole();
@@ -1478,15 +1495,33 @@
 
         const deleteButton = role === 'admin' ? `<button class="grad-action px-3 py-1 rounded-lg border border-red-500/40 text-red-300 hover:bg-red-500/10 transition ml-2" data-id="${it.id}" data-action="delete">Hapus</button>` : '';
 
-        const displayDate = it.isAuto ? '<span class="text-emerald-500/50 italic">Belum Diatur</span>' : formatDateId(it.date);
+        const editPeriodButton = role === 'admin' ? `
+          <button class="grad-action p-2 rounded-lg bg-emerald-800/50 text-gold-400 hover:bg-emerald-700 transition ml-2" data-id="${it.id}" data-action="edit-period" title="Edit Periode">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          </button>
+        ` : '';
+
         const displayTeacher = it.isAuto ? '<span class="text-emerald-500/50 italic">Belum Diatur</span>' : it.teacherName;
+
+        // Format periode ke Bulan Tahun (misal: "Mei 2024") jika formatnya YYYY-MM
+        let displayPeriod = it.period || '-';
+        if (displayPeriod.includes('-') && displayPeriod.length === 7) {
+          const [year, month] = displayPeriod.split('-');
+          const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+          displayPeriod = `${monthNames[parseInt(month) - 1]} ${year}`;
+        }
 
         tbody.insertAdjacentHTML('beforeend', `
           <tr>
-            <td class="px-4 py-3 text-white font-medium">${displayDate}</td>
+            <td class="px-4 py-3 text-white font-medium">
+              <div class="flex items-center gap-2">
+                <span>${displayPeriod}</span>
+                ${editPeriodButton}
+              </div>
+            </td>
             <td class="px-4 py-3 text-emerald-200/80">
               <div class="text-white font-medium">${it.studentName}</div>
-              <div class="text-[10px] text-emerald-400/60">${it.juz ? 'Juz ' + it.juz : '-'} ${it.period ? '| ' + it.period : ''}</div>
+              <div class="text-[10px] text-emerald-400/60">${it.juz ? 'Juz ' + it.juz : '-'}</div>
             </td>
             <td class="px-4 py-3 text-emerald-200/80">${displayTeacher}</td>
             <td class="px-4 py-3">
@@ -1506,6 +1541,40 @@
           </tr>
         `);
       });
+    }
+
+    document.getElementById('graduation-period-filter')?.addEventListener('change', () => renderGraduationTable());
+    document.getElementById('graduation-search')?.addEventListener('input', () => renderGraduationTable());
+
+    document.getElementById('period-modal-close')?.addEventListener('click', closePeriodModal);
+    document.getElementById('period-modal-cancel')?.addEventListener('click', closePeriodModal);
+    document.getElementById('period-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('period-modal-id').value;
+      const period = document.getElementById('period-month-year').value;
+      
+      if (!id || !period) return;
+      
+      showToast('Menyimpan periode...', 'info');
+      try {
+        await window.dataSdk?.update?.('schedules', id, { period });
+        showToast('Periode berhasil diperbarui.', 'success');
+        closePeriodModal();
+        renderGraduationTable();
+      } catch (err) {
+        console.error('Error updating period:', err);
+        showToast('Gagal memperbarui periode.', 'error');
+      }
+    });
+
+    function closePeriodModal() {
+      const modal = document.getElementById('period-modal');
+      const dialog = document.getElementById('period-modal-dialog');
+      if (dialog) dialog.classList.add('scale-95');
+      setTimeout(() => {
+        if (modal) modal.classList.add('hidden');
+        document.body.classList.remove('overflow-hidden');
+      }, 300);
     }
 
     async function announceGraduation() {
@@ -1580,10 +1649,21 @@
     function renderAnnouncementsAdmin() {
       requireOperator();
       const wrap = document.getElementById('ann-list');
+      const searchInput = document.getElementById('ann-search');
       if (!wrap) return;
-      const list = (announcements || [])
+
+      const searchTerm = (searchInput?.value || '').toLowerCase().trim();
+      let list = (announcements || [])
         .slice()
         .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+
+      if (searchTerm) {
+        list = list.filter(it => 
+          (it.title || '').toLowerCase().includes(searchTerm) || 
+          (it.body || '').toLowerCase().includes(searchTerm) ||
+          (it.tag || '').toLowerCase().includes(searchTerm)
+        );
+      }
 
       wrap.innerHTML = '';
       if (list.length === 0) {
@@ -1595,7 +1675,7 @@
         wrap.insertAdjacentHTML('beforeend', `
           <div class="p-3 rounded-xl bg-emerald-950/30 border border-emerald-700/40 flex items-center justify-between gap-4 group hover:border-emerald-600/60 transition-colors">
             <div class="flex items-center gap-3 overflow-hidden">
-              <input type="checkbox" class="w-4 h-4 rounded border-emerald-700 bg-emerald-900/50 text-gold-500 focus:ring-gold-500/20 cursor-pointer">
+              <input type="checkbox" class="ann-checkbox w-4 h-4 rounded border-emerald-700 bg-emerald-900/50 text-gold-500 focus:ring-gold-500/20 cursor-pointer" data-id="${it.id}">
               <div class="overflow-hidden">
                 <div class="flex items-baseline gap-2">
                   <div class="text-white font-semibold text-sm truncate">${it.title || '-'}</div>
@@ -1611,6 +1691,48 @@
           </div>
         `);
       });
+
+      // Update bulk actions visibility
+      updateAnnBulkActions();
+    }
+
+    function updateAnnBulkActions() {
+      const checked = document.querySelectorAll('.ann-checkbox:checked');
+      const container = document.getElementById('ann-bulk-actions');
+      const countLabel = document.getElementById('ann-selected-count');
+      if (!container || !countLabel) return;
+
+      if (checked.length > 0) {
+        container.classList.remove('hidden');
+        countLabel.textContent = `${checked.length} terpilih`;
+      } else {
+        container.classList.add('hidden');
+      }
+    }
+
+    async function deleteAnnouncementsBulk() {
+      const checked = document.querySelectorAll('.ann-checkbox:checked');
+      const ids = Array.from(checked).map(el => el.dataset.id);
+      if (ids.length === 0) return;
+
+      const confirmed = await showConfirmationModal({
+        title: 'Hapus Pengumuman Terpilih?',
+        body: `Anda yakin ingin menghapus ${ids.length} pengumuman sekaligus?`
+      });
+      if (!confirmed) return;
+
+      showToast(`Menghapus ${ids.length} pengumuman...`, 'info');
+      try {
+        for (const id of ids) {
+          await window.dataSdk?.remove?.('announcements', id);
+        }
+        showToast(`${ids.length} pengumuman berhasil dihapus.`, 'success');
+        renderAnnouncementsAdmin();
+        renderPublicAnnouncements();
+      } catch (err) {
+        console.error('Error bulk deleting announcements:', err);
+        showToast('Gagal menghapus beberapa pengumuman.', 'error');
+      }
     }
 
     function downloadJson(filename, obj) {
@@ -2398,6 +2520,29 @@
         }
         return;
       }
+
+      if (action === 'edit-period') {
+        const schedule = schedules.find(s => s.id === id);
+        if (!schedule) return;
+        
+        const modal = document.getElementById('period-modal');
+        const dialog = document.getElementById('period-modal-dialog');
+        const input = document.getElementById('period-month-year');
+        const idInput = document.getElementById('period-modal-id');
+        
+        idInput.value = id;
+        // Jika periode sudah dalam format YYYY-MM, set ke input
+        if (schedule.period && schedule.period.includes('-') && schedule.period.length === 7) {
+          input.value = schedule.period;
+        } else {
+          input.value = '';
+        }
+        
+        modal.classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
+        setTimeout(() => dialog.classList.remove('scale-95'), 50);
+        return;
+      }
       
       if (status) {
         await window.dataSdk?.update?.('schedules', id, { graduationStatus: status });
@@ -2969,6 +3114,14 @@
       if (idEl) idEl.value = '';
     });
 
+    document.getElementById('ann-search')?.addEventListener('input', () => renderAnnouncementsAdmin());
+    document.getElementById('ann-bulk-delete')?.addEventListener('click', () => deleteAnnouncementsBulk());
+    document.getElementById('ann-list')?.addEventListener('change', (e) => {
+      if (e.target.classList.contains('ann-checkbox')) {
+        updateAnnBulkActions();
+      }
+    });
+
     document.getElementById('ann-list')?.addEventListener('click', async (e) => {
       const btn = e.target.closest('.ann-action');
       if (!btn) return;
@@ -3407,58 +3560,25 @@
       // 3. Init SDKs
       try {
         initElementSdk();
-        initDataSdk((data) => {
-          if (data.registrations) {
-            registrations = data.registrations;
+        initDataSdk().then(() => {
+          // Initial re-apply after everything loaded
+          applyBranding();
+          applyHomepageSettings();
+          applyRegistrationSettings();
+          renderPublicSchedule();
+          renderPublicAnnouncements();
+          
+          if (isOperatorLoggedIn()) {
             renderApprovalTable();
-          }
-          if (data.students) {
-            students = data.students;
             renderStudents();
-            renderCertificateTable();
-            renderCongratulationsTable();
-          }
-          if (data.schedules) {
-            schedules = data.schedules;
             renderScheduleAdmin();
             renderGraduationTable();
-            renderPublicSchedule();
-            renderCertificateTable();
-          }
-          if (data.announcements) {
-            announcements = data.announcements;
             renderAnnouncementsAdmin();
-            renderPublicAnnouncements();
-          }
-          if (data.pentasmiAccounts) {
-            pentasmiAccounts = data.pentasmiAccounts;
-            lsSet(STORAGE_KEYS.pentasmiAccounts, pentasmiAccounts);
             renderPentasmiList();
-          }
-          if (data.certificates) {
-            certificates = data.certificates || {};
             renderCertificateTable();
-          }
-          if (data.congratulations) {
-            congratulations = data.congratulations || {};
             renderCongratulationsTable();
           }
-          if (data.registrationSettings) {
-            registrationSettings = data.registrationSettings;
-            applyRegistrationSettings();
-          }
-          if (data.elementConfig) {
-            applyBranding(data.elementConfig);
-          }
-          if (data.homepage) {
-            applyHomepageSettings(data.homepage);
-          }
         });
-        applyBranding();
-        applyHomepageSettings();
-        applyRegistrationSettings();
-        renderPublicSchedule();
-        renderPublicAnnouncements();
       } catch (err) {
         console.error('Initialization error:', err);
       }
