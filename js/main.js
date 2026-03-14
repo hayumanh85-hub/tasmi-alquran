@@ -1489,27 +1489,19 @@
       const homeSettings = settings.homepage || lsGet(STORAGE_KEYS.homepage, {});
       
       // Hero
-      document.getElementById('hero-arabic-input').value = homeSettings.hero_arabic || '';
-      document.getElementById('hero-title-input').value = homeSettings.hero_title || '';
-      document.getElementById('hero-subtitle-input').value = homeSettings.hero_subtitle || '';
+      if (document.getElementById('hero-arabic-input')) document.getElementById('hero-arabic-input').value = homeSettings.hero_arabic || '';
+      if (document.getElementById('hero-title-input')) document.getElementById('hero-title-input').value = homeSettings.hero_title || '';
+      if (document.getElementById('hero-subtitle-input')) document.getElementById('hero-subtitle-input').value = homeSettings.hero_subtitle || '';
 
       // About
-      document.getElementById('about-title-input').value = homeSettings.about_title || '';
-      document.getElementById('about-content-input').value = homeSettings.about_content || '';
-
-      // Cards
-      document.getElementById('card1-title-input').value = homeSettings.card1_title || '';
-      document.getElementById('card1-desc-input').value = homeSettings.card1_desc || '';
-      document.getElementById('card2-title-input').value = homeSettings.card2_title || '';
-      document.getElementById('card2-desc-input').value = homeSettings.card2_desc || '';
-      document.getElementById('card3-title-input').value = homeSettings.card3_title || '';
-      document.getElementById('card3-desc-input').value = homeSettings.card3_desc || '';
+      if (document.getElementById('about-title-input')) document.getElementById('about-title-input').value = homeSettings.about_title || '';
+      if (document.getElementById('about-content-input')) document.getElementById('about-content-input').value = homeSettings.about_content || '';
 
       // Footer
-      document.getElementById('footer-title-input').value = homeSettings.footer_title || '';
-      document.getElementById('footer-description-input').value = homeSettings.footer_description || '';
-      document.getElementById('footer-phone-input').value = homeSettings.footer_phone || '';
-      document.getElementById('footer-email-input').value = homeSettings.footer_email || '';
+      if (document.getElementById('footer-title-input')) document.getElementById('footer-title-input').value = homeSettings.footer_title || '';
+      if (document.getElementById('footer-description-input')) document.getElementById('footer-description-input').value = homeSettings.footer_description || '';
+      if (document.getElementById('footer-phone-input')) document.getElementById('footer-phone-input').value = homeSettings.footer_phone || '';
+      if (document.getElementById('footer-email-input')) document.getElementById('footer-email-input').value = homeSettings.footer_email || '';
     }
 
     function loadRegistrationSettingsIntoForm() {
@@ -4478,21 +4470,15 @@
       e.preventDefault();
       try { requireOperator(); } catch { return; }
       const settingsData = {
-        hero_arabic: document.getElementById('hero-arabic-input').value,
-        hero_title: document.getElementById('hero-title-input').value,
-        hero_subtitle: document.getElementById('hero-subtitle-input').value,
-        about_title: document.getElementById('about-title-input').value,
-        about_content: document.getElementById('about-content-input').value,
-        card1_title: document.getElementById('card1-title-input').value,
-        card1_desc: document.getElementById('card1-desc-input').value,
-        card2_title: document.getElementById('card2-title-input').value,
-        card2_desc: document.getElementById('card2-desc-input').value,
-        card3_title: document.getElementById('card3-title-input').value,
-        card3_desc: document.getElementById('card3-desc-input').value,
-        footer_title: document.getElementById('footer-title-input').value,
-        footer_description: document.getElementById('footer-description-input').value,
-        footer_phone: document.getElementById('footer-phone-input').value,
-        footer_email: document.getElementById('footer-email-input').value,
+        hero_arabic: document.getElementById('hero-arabic-input')?.value || '',
+        hero_title: document.getElementById('hero-title-input')?.value || '',
+        hero_subtitle: document.getElementById('hero-subtitle-input')?.value || '',
+        about_title: document.getElementById('about-title-input')?.value || '',
+        about_content: document.getElementById('about-content-input')?.value || '',
+        footer_title: document.getElementById('footer-title-input')?.value || '',
+        footer_description: document.getElementById('footer-description-input')?.value || '',
+        footer_phone: document.getElementById('footer-phone-input')?.value || '',
+        footer_email: document.getElementById('footer-email-input')?.value || '',
       };
       await window.dataSdk?.set?.('settings', 'homepage', { value: settingsData });
       lsSet(STORAGE_KEYS.homepage, settingsData);
