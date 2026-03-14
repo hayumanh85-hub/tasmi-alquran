@@ -835,17 +835,21 @@
 
       (announcements || []).forEach(ann => {
         if (ann.studentResults && Array.isArray(ann.studentResults)) {
-          // Format periode untuk filter: "Bulan Tahun"
-          const dateObj = new Date(ann.date);
-          const monthYear = dateObj.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
-          periods.add(monthYear);
-
           ann.studentResults.forEach(res => {
+            // Gunakan periode dari data siswa (res.period) jika ada, jika tidak gunakan bulan/tahun dari tanggal pengumuman
+            let displayPeriod = res.period;
+            if (!displayPeriod) {
+              const dateObj = new Date(res.date || ann.date);
+              displayPeriod = dateObj.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+            }
+            
+            periods.add(displayPeriod);
+
             allResults.push({
               ...res,
               announcementId: ann.id,
-              annDate: ann.date,
-              period: monthYear
+              annDate: res.date || ann.date,
+              displayPeriod: displayPeriod
             });
           });
         }
@@ -854,10 +858,11 @@
       // Update dropdown periode jika belum ada atau data berubah
       if (periodFilter && periodFilter.options.length <= 1 && periods.size > 0) {
         const sortedPeriods = Array.from(periods).sort((a, b) => {
-          // Sort desc by date
+          // Attempt to sort by date if it's a standard Month Year format, else string sort
           const dateA = new Date(a.split(' ').reverse().join(' '));
           const dateB = new Date(b.split(' ').reverse().join(' '));
-          return dateB - dateA;
+          if (!isNaN(dateA) && !isNaN(dateB)) return dateB - dateA;
+          return b.localeCompare(a);
         });
         
         sortedPeriods.forEach(p => {
@@ -877,7 +882,7 @@
 
       // Filter berdasarkan periode
       if (selectedPeriod) {
-        allResults = allResults.filter(res => res.period === selectedPeriod);
+        allResults = allResults.filter(res => res.displayPeriod === selectedPeriod);
       }
 
       // Urutkan berdasarkan tanggal terbaru
@@ -914,7 +919,7 @@
               </div>
             </td>
             <td class="px-6 py-4 text-emerald-300/60 text-xs hidden md:table-cell">
-              ${formatDateId(res.annDate)}
+              ${res.displayPeriod}
             </td>
             <td class="px-6 py-4">
               <div class="flex items-center justify-between">
@@ -2207,13 +2212,17 @@
         const scheduleEntry = (schedules || []).find(it => it.studentId === s.id && it.graduationStatus === 'Lulus');
         const displayJuz = scheduleEntry?.juz || s.juz || '-';
 
-        tbody.insertAdjacentHTML('beforeend', `
+      tbody.insertAdjacentHTML('beforeend', `
           <tr class="hover:bg-emerald-800/10 transition-colors">
             <td class="px-4 py-3 text-white font-medium">${s.name}</td>
             <td class="px-4 py-3 text-emerald-200/80 text-sm">${s.class} / ${displayJuz}</td>
+            <td class="px-4 py-3 text-emerald-400/70 text-xs italic">${s.period || '-'}</td>
             <td class="px-4 py-3">${certPreview}</td>
             <td class="px-4 py-3 text-right">
               <div class="flex items-center justify-end gap-2">
+                <button class="student-action p-2 rounded-lg bg-emerald-800/50 text-emerald-200 hover:bg-emerald-700 transition" data-id="${s.id}" data-action="edit" title="Edit">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                </button>
                 <button class="cert-action px-3 py-1 rounded-lg border border-gold-500/40 text-gold-200 hover:bg-gold-500/10 transition disabled:opacity-50" 
                   data-id="${s.id}" data-action="link" title="Input Link Google Drive">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
@@ -2707,6 +2716,7 @@
       const studentClass = (document.getElementById('student-class')?.value || '').trim();
       const juz = (document.getElementById('student-juz')?.value || '').trim();
       const period = (document.getElementById('student-period')?.value || '').trim();
+      const examDate = (document.getElementById('student-exam-date')?.value || '').trim();
       const notes = (document.getElementById('student-notes')?.value || '').trim();
       if (!name) return;
       
@@ -2761,6 +2771,7 @@
           class: studentClass, 
           juz, 
           period,
+          examDate,
           notes,
           photo: photoUrl,
           updated_at: new Date().toISOString()

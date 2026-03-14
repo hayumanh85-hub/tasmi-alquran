@@ -282,7 +282,7 @@
             <tr>
              <th class="px-6 py-4 text-left font-bold uppercase tracking-wider w-16">No</th>
              <th class="px-6 py-4 text-left font-bold uppercase tracking-wider">Nama Siswa</th>
-             <th class="px-6 py-4 text-left font-bold uppercase tracking-wider hidden md:table-cell">Tanggal</th>
+             <th class="px-6 py-4 text-left font-bold uppercase tracking-wider hidden md:table-cell">Bulan Kelulusan</th>
              <th class="px-6 py-4 text-left font-bold uppercase tracking-wider">Status</th>
             </tr>
            </thead>
@@ -796,6 +796,7 @@
               <tr>
                <th class="text-left px-4 py-3">Nama Siswa</th>
                <th class="text-left px-4 py-3">Kelas / Juz</th>
+               <th class="text-left px-4 py-3 italic">Periode</th>
                <th class="text-left px-4 py-3">Sertifikat</th>
                <th class="text-right px-4 py-3">Aksi</th>
               </tr>
@@ -1056,9 +1057,15 @@
          <input id="student-juz" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none" placeholder="Contoh: 30">
         </div>
        </div>
-       <div>
-        <label class="block text-emerald-200 mb-2 font-medium" for="student-period">Periode / Tahun Ajaran</label>
-        <input id="student-period" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none" placeholder="Contoh: 2024/2025 Genap">
+       <div class="grid grid-cols-2 gap-4">
+        <div>
+         <label class="block text-emerald-200 mb-2 font-medium" for="student-period">Periode Kelulusan</label>
+         <input id="student-period" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none" placeholder="Contoh: Maret 2024">
+        </div>
+        <div>
+         <label class="block text-emerald-200 mb-2 font-medium" for="student-exam-date">Tanggal Uji</label>
+         <input id="student-exam-date" type="date" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none">
+        </div>
        </div>
        <div>
         <label class="block text-emerald-200 mb-2 font-medium" for="student-notes">Catatan</label>
