@@ -619,8 +619,18 @@
 
       document.querySelectorAll('.operator-nav-btn').forEach(btn => {
         const active = btn.dataset.tab === tab;
-        btn.classList.toggle('border-gold-500/60', active);
-        btn.classList.toggle('bg-emerald-900/60', active);
+        // Reset classes
+        btn.classList.remove('bg-gold-500', 'text-emerald-950', 'border-gold-500', 'shadow-lg', 'shadow-gold-500/20', 'scale-[1.02]', 'bg-emerald-900/40', 'text-emerald-200/80', 'border-emerald-700/50');
+        
+        if (active) {
+          btn.classList.add('bg-gold-500', 'text-emerald-950', 'border-gold-500', 'shadow-lg', 'shadow-gold-500/20', 'scale-[1.02]');
+          const dot = btn.querySelector('span');
+          if (dot) dot.classList.replace('opacity-40', 'opacity-100');
+        } else {
+          btn.classList.add('bg-emerald-900/40', 'text-emerald-200/80', 'border-emerald-700/50');
+          const dot = btn.querySelector('span');
+          if (dot) dot.classList.replace('opacity-100', 'opacity-40');
+        }
       });
 
       // Role-based visibility

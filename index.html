@@ -268,24 +268,69 @@
          </div>
         </div>
 
-        <div class="grid lg:grid-cols-[280px_1fr]">
-         <aside class="p-4 md:p-5 border-b lg:border-b-0 lg:border-r border-emerald-700/50 bg-emerald-950/20">
-          <nav class="grid grid-cols-2 lg:grid-cols-1 gap-2">
-           <button class="operator-nav-btn w-full text-left px-3 md:px-4 py-2.5 md:py-3 rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-100 hover:border-gold-500/40 transition text-xs md:text-sm" data-tab="registration-settings">Pengaturan Pendaftaran</button>
-           <button class="operator-nav-btn w-full text-left px-3 md:px-4 py-2.5 md:py-3 rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-100 hover:border-gold-500/40 transition text-xs md:text-sm" data-tab="homepage">Kelola Beranda</button>
-           <button class="operator-nav-btn w-full text-left px-3 md:px-4 py-2.5 md:py-3 rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-100 hover:border-gold-500/40 transition text-xs md:text-sm" data-tab="general">Pengaturan Umum</button>
-           <button class="operator-nav-btn w-full text-left px-3 md:px-4 py-2.5 md:py-3 rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-100 hover:border-gold-500/40 transition text-xs md:text-sm" data-tab="approval">Kelola Persetujuan</button>
-           <button class="operator-nav-btn w-full text-left px-3 md:px-4 py-2.5 md:py-3 rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-100 hover:border-gold-500/40 transition text-xs md:text-sm" data-tab="students">Data Siswa</button>
-           <button class="operator-nav-btn w-full text-left px-3 md:px-4 py-2.5 md:py-3 rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-100 hover:border-gold-500/40 transition text-xs md:text-sm" data-tab="schedule">Kelola Jadwal</button>
-           <button class="operator-nav-btn w-full text-left px-3 md:px-4 py-2.5 md:py-3 rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-100 hover:border-gold-500/40 transition text-xs md:text-sm" data-tab="graduation">Penentuan Kelulusan</button>
-           <button class="operator-nav-btn w-full text-left px-3 md:px-4 py-2.5 md:py-3 rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-100 hover:border-gold-500/40 transition text-xs md:text-sm" data-tab="pentasmi-history">History Tasmi</button>
-           <button class="operator-nav-btn w-full text-left px-3 md:px-4 py-2.5 md:py-3 rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-100 hover:border-gold-500/40 transition text-xs md:text-sm" data-tab="pentasmi-password">Ganti Password</button>
-           <button class="operator-nav-btn w-full text-left px-3 md:px-4 py-2.5 md:py-3 rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-100 hover:border-gold-500/40 transition text-xs md:text-sm" data-tab="operator-monitoring">Monitoring</button>
-           <button class="operator-nav-btn w-full text-left px-3 md:px-4 py-2.5 md:py-3 rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-100 hover:border-gold-500/40 transition text-xs md:text-sm" data-tab="pentasmi">Kelola Pentasmi</button>
-           <button class="operator-nav-btn w-full text-left px-3 md:px-4 py-2.5 md:py-3 rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-100 hover:border-gold-500/40 transition text-xs md:text-sm" data-tab="announcements">Kelola Pengumuman</button>
-           <button class="operator-nav-btn w-full text-left px-3 md:px-4 py-2.5 md:py-3 rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-100 hover:border-gold-500/40 transition text-xs md:text-sm" data-tab="certificates">Upload Sertifikat</button>
-           <button class="operator-nav-btn w-full text-left px-3 md:px-4 py-2.5 md:py-3 rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-100 hover:border-gold-500/40 transition text-xs md:text-sm" data-tab="congratulations">Ucapan Selamat</button>
-           <button class="operator-nav-btn w-full text-left px-3 md:px-4 py-2.5 md:py-3 rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-100 hover:border-gold-500/40 transition text-xs md:text-sm" data-tab="sync">Sinkronisasi</button>
+        <div class="flex flex-col">
+         <aside class="p-4 md:p-5 border-b border-emerald-700/50 bg-emerald-950/20 sticky top-0 z-30 backdrop-blur-md">
+          <nav class="flex flex-nowrap overflow-x-auto gap-3 custom-scrollbar pb-3 lg:pb-2 scroll-smooth px-2">
+           <button class="operator-nav-btn whitespace-nowrap px-5 py-2.5 rounded-2xl border border-emerald-700/50 text-emerald-200/80 hover:text-white hover:border-gold-500/40 hover:bg-emerald-800/30 transition-all duration-300 text-xs md:text-sm font-medium shrink-0 flex items-center gap-2" data-tab="registration-settings">
+            <span class="w-1.5 h-1.5 rounded-full bg-current opacity-40"></span>
+            Pengaturan Pendaftaran
+           </button>
+           <button class="operator-nav-btn whitespace-nowrap px-5 py-2.5 rounded-2xl border border-emerald-700/50 text-emerald-200/80 hover:text-white hover:border-gold-500/40 hover:bg-emerald-800/30 transition-all duration-300 text-xs md:text-sm font-medium shrink-0 flex items-center gap-2" data-tab="homepage">
+            <span class="w-1.5 h-1.5 rounded-full bg-current opacity-40"></span>
+            Kelola Beranda
+           </button>
+           <button class="operator-nav-btn whitespace-nowrap px-5 py-2.5 rounded-2xl border border-emerald-700/50 text-emerald-200/80 hover:text-white hover:border-gold-500/40 hover:bg-emerald-800/30 transition-all duration-300 text-xs md:text-sm font-medium shrink-0 flex items-center gap-2" data-tab="general">
+            <span class="w-1.5 h-1.5 rounded-full bg-current opacity-40"></span>
+            Pengaturan Umum
+           </button>
+           <button class="operator-nav-btn whitespace-nowrap px-5 py-2.5 rounded-2xl border border-emerald-700/50 text-emerald-200/80 hover:text-white hover:border-gold-500/40 hover:bg-emerald-800/30 transition-all duration-300 text-xs md:text-sm font-medium shrink-0 flex items-center gap-2" data-tab="approval">
+            <span class="w-1.5 h-1.5 rounded-full bg-current opacity-40"></span>
+            Kelola Persetujuan
+           </button>
+           <button class="operator-nav-btn whitespace-nowrap px-5 py-2.5 rounded-2xl border border-emerald-700/50 text-emerald-200/80 hover:text-white hover:border-gold-500/40 hover:bg-emerald-800/30 transition-all duration-300 text-xs md:text-sm font-medium shrink-0 flex items-center gap-2" data-tab="students">
+            <span class="w-1.5 h-1.5 rounded-full bg-current opacity-40"></span>
+            Data Siswa
+           </button>
+           <button class="operator-nav-btn whitespace-nowrap px-5 py-2.5 rounded-2xl border border-emerald-700/50 text-emerald-200/80 hover:text-white hover:border-gold-500/40 hover:bg-emerald-800/30 transition-all duration-300 text-xs md:text-sm font-medium shrink-0 flex items-center gap-2" data-tab="schedule">
+            <span class="w-1.5 h-1.5 rounded-full bg-current opacity-40"></span>
+            Kelola Jadwal
+           </button>
+           <button class="operator-nav-btn whitespace-nowrap px-5 py-2.5 rounded-2xl border border-emerald-700/50 text-emerald-200/80 hover:text-white hover:border-gold-500/40 hover:bg-emerald-800/30 transition-all duration-300 text-xs md:text-sm font-medium shrink-0 flex items-center gap-2" data-tab="graduation">
+            <span class="w-1.5 h-1.5 rounded-full bg-current opacity-40"></span>
+            Penentuan Kelulusan
+           </button>
+           <button class="operator-nav-btn whitespace-nowrap px-5 py-2.5 rounded-2xl border border-emerald-700/50 text-emerald-200/80 hover:text-white hover:border-gold-500/40 hover:bg-emerald-800/30 transition-all duration-300 text-xs md:text-sm font-medium shrink-0 flex items-center gap-2" data-tab="pentasmi-history">
+            <span class="w-1.5 h-1.5 rounded-full bg-current opacity-40"></span>
+            History Tasmi
+           </button>
+           <button class="operator-nav-btn whitespace-nowrap px-5 py-2.5 rounded-2xl border border-emerald-700/50 text-emerald-200/80 hover:text-white hover:border-gold-500/40 hover:bg-emerald-800/30 transition-all duration-300 text-xs md:text-sm font-medium shrink-0 flex items-center gap-2" data-tab="pentasmi-password">
+            <span class="w-1.5 h-1.5 rounded-full bg-current opacity-40"></span>
+            Ganti Password
+           </button>
+           <button class="operator-nav-btn whitespace-nowrap px-5 py-2.5 rounded-2xl border border-emerald-700/50 text-emerald-200/80 hover:text-white hover:border-gold-500/40 hover:bg-emerald-800/30 transition-all duration-300 text-xs md:text-sm font-medium shrink-0 flex items-center gap-2" data-tab="operator-monitoring">
+            <span class="w-1.5 h-1.5 rounded-full bg-current opacity-40"></span>
+            Monitoring
+           </button>
+           <button class="operator-nav-btn whitespace-nowrap px-5 py-2.5 rounded-2xl border border-emerald-700/50 text-emerald-200/80 hover:text-white hover:border-gold-500/40 hover:bg-emerald-800/30 transition-all duration-300 text-xs md:text-sm font-medium shrink-0 flex items-center gap-2" data-tab="pentasmi">
+            <span class="w-1.5 h-1.5 rounded-full bg-current opacity-40"></span>
+            Kelola Pentasmi
+           </button>
+           <button class="operator-nav-btn whitespace-nowrap px-5 py-2.5 rounded-2xl border border-emerald-700/50 text-emerald-200/80 hover:text-white hover:border-gold-500/40 hover:bg-emerald-800/30 transition-all duration-300 text-xs md:text-sm font-medium shrink-0 flex items-center gap-2" data-tab="announcements">
+            <span class="w-1.5 h-1.5 rounded-full bg-current opacity-40"></span>
+            Kelola Pengumuman
+           </button>
+           <button class="operator-nav-btn whitespace-nowrap px-5 py-2.5 rounded-2xl border border-emerald-700/50 text-emerald-200/80 hover:text-white hover:border-gold-500/40 hover:bg-emerald-800/30 transition-all duration-300 text-xs md:text-sm font-medium shrink-0 flex items-center gap-2" data-tab="certificates">
+            <span class="w-1.5 h-1.5 rounded-full bg-current opacity-40"></span>
+            Upload Sertifikat
+           </button>
+           <button class="operator-nav-btn whitespace-nowrap px-5 py-2.5 rounded-2xl border border-emerald-700/50 text-emerald-200/80 hover:text-white hover:border-gold-500/40 hover:bg-emerald-800/30 transition-all duration-300 text-xs md:text-sm font-medium shrink-0 flex items-center gap-2" data-tab="congratulations">
+            <span class="w-1.5 h-1.5 rounded-full bg-current opacity-40"></span>
+            Ucapan Selamat
+           </button>
+           <button class="operator-nav-btn whitespace-nowrap px-5 py-2.5 rounded-2xl border border-emerald-700/50 text-emerald-200/80 hover:text-white hover:border-gold-500/40 hover:bg-emerald-800/30 transition-all duration-300 text-xs md:text-sm font-medium shrink-0 flex items-center gap-2" data-tab="sync">
+            <span class="w-1.5 h-1.5 rounded-full bg-current opacity-40"></span>
+            Sinkronisasi
+           </button>
           </nav>
          </aside>
 
