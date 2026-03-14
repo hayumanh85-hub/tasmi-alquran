@@ -317,7 +317,6 @@
           onDataChanged(data) {
             schedules = data;
             renderPublicSchedule();
-            renderGraduationBoard();
             if (isOperatorLoggedIn()) {
               renderScheduleAdmin();
               renderGraduationTable();
@@ -330,6 +329,7 @@
           onDataChanged(data) {
             announcements = data;
             renderPublicAnnouncements();
+            renderGraduationBoard();
             if (isOperatorLoggedIn()) renderAnnouncementsAdmin();
           }
         });
@@ -824,12 +824,26 @@
       const tbody = document.getElementById('graduation-announcement-table');
       if (!tbody) return;
 
-      // Ambil data kelulusan dari schedules
-      const graduated = (schedules || [])
-        .filter(s => s.graduationStatus === 'Lulus')
-        .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+      // Ambil data kelulusan dari koleksi announcements (Hasil Resmi)
+      const allResults = [];
+      (announcements || []).forEach(ann => {
+        if (ann.studentResults && Array.isArray(ann.studentResults)) {
+          ann.studentResults.forEach(res => {
+            if (res.status === 'Lulus') {
+              allResults.push({
+                ...res,
+                announcementId: ann.id,
+                annDate: ann.date
+              });
+            }
+          });
+        }
+      });
 
-      if (graduated.length === 0) {
+      // Urutkan berdasarkan tanggal terbaru
+      allResults.sort((a, b) => String(b.annDate || '').localeCompare(String(a.annDate || '')));
+
+      if (allResults.length === 0) {
         tbody.innerHTML = `
           <tr>
             <td colspan="3" class="px-6 py-10 text-center text-emerald-200/50 italic">
@@ -839,15 +853,15 @@
         return;
       }
 
-      tbody.innerHTML = graduated.map((s, idx) => `
-        <tr class="hover:bg-emerald-800/20 transition-all group cursor-pointer" onclick="openGraduationDetailModal('${s.studentId}', null)">
+      tbody.innerHTML = allResults.map((res, idx) => `
+        <tr class="hover:bg-emerald-800/20 transition-all group cursor-pointer" onclick="openGraduationDetailModal('${res.studentId}', '${res.announcementId}')">
           <td class="px-6 py-4 text-emerald-200 font-medium">${idx + 1}.</td>
           <td class="px-6 py-4">
             <div class="flex items-center gap-3">
               <div class="w-8 h-8 rounded-full bg-emerald-950/50 flex items-center justify-center text-gold-400 group-hover:scale-110 transition-transform">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
               </div>
-              <span class="text-white font-bold group-hover:text-gold-400 transition-colors">${s.studentName}</span>
+              <span class="text-white font-bold group-hover:text-gold-400 transition-colors">${res.studentName}</span>
             </div>
           </td>
           <td class="px-6 py-4">
