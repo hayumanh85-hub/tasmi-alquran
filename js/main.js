@@ -1524,11 +1524,19 @@
       emptyEl?.classList.add('hidden');
 
       list.forEach((s, index) => {
-        const statusPill = (st) => {
-          if (st === 'Lulus') return '<span class="inline-flex px-2 py-1 rounded-full text-[10px] bg-green-500/20 text-green-300 border border-green-500/30">Lulus</span>';
-          if (st === 'Tidak Lulus') return '<span class="inline-flex px-2 py-1 rounded-full text-[10px] bg-red-500/20 text-red-300 border border-red-500/30">Tidak Lulus</span>';
-          return '<span class="inline-flex px-2 py-1 rounded-full text-[10px] bg-gold-500/10 text-gold-300 border border-gold-500/20">Belum Dinilai</span>';
+        const getStatusColor = (st) => {
+          if (st === 'Lulus') return 'text-green-400 border-green-500/30 bg-green-500/10';
+          if (st === 'Tidak Lulus') return 'text-red-400 border-red-500/30 bg-red-500/10';
+          return 'text-gold-300 border-emerald-700/50 bg-emerald-950/50';
         };
+
+        const graduationSelect = `
+          <select class="student-grad-select ${getStatusColor(s.graduationStatus)} border rounded-lg px-2 py-1 text-[10px] focus:border-gold-500 focus:outline-none cursor-pointer transition-colors" data-id="${s.id}">
+            <option value="Belum Dinilai" ${!s.graduationStatus || s.graduationStatus === 'Belum Dinilai' ? 'selected' : ''}>Belum Dinilai</option>
+            <option value="Lulus" ${s.graduationStatus === 'Lulus' ? 'selected' : ''}>Lulus</option>
+            <option value="Tidak Lulus" ${s.graduationStatus === 'Tidak Lulus' ? 'selected' : ''}>Tidak Lulus</option>
+          </select>
+        `;
 
         const hasPhoto = !!s.photo;
         const photoHtml = hasPhoto 
@@ -1565,7 +1573,7 @@
               </div>
             </td>
             <td class="px-4 py-4 text-center">
-              ${statusPill(s.graduationStatus)}
+              ${graduationSelect}
             </td>
             <td class="px-4 py-4 text-right whitespace-nowrap">
               <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -1788,11 +1796,19 @@
           canDetermineGraduation = true;
         }
 
-        const statusPill = (s) => {
-          if (s === 'Lulus') return 'bg-green-500/20 text-green-300 border-green-500/30';
-          if (s === 'Tidak Lulus') return 'bg-red-500/20 text-red-300 border-red-500/30';
-          return 'bg-gold-500/15 text-gold-200 border-gold-500/30';
+        const getGradColor = (st) => {
+          if (st === 'Lulus') return 'text-green-400 border-green-500/30 bg-green-500/10';
+          if (st === 'Tidak Lulus') return 'text-red-400 border-red-500/30 bg-red-500/10';
+          return 'text-gold-200 border-emerald-700/50 bg-emerald-950/50';
         };
+
+        const graduationSelect = canDetermineGraduation ? `
+          <select class="grad-status-select ${getGradColor(it.graduationStatus)} border rounded-lg px-2 py-1 text-[10px] focus:border-gold-500 focus:outline-none cursor-pointer transition-colors" data-id="${it.id}">
+            <option value="Menunggu" ${!it.graduationStatus || it.graduationStatus === 'Menunggu' ? 'selected' : ''}>Menunggu</option>
+            <option value="Lulus" ${it.graduationStatus === 'Lulus' ? 'selected' : ''}>Lulus</option>
+            <option value="Tidak Lulus" ${it.graduationStatus === 'Tidak Lulus' ? 'selected' : ''}>Tidak Lulus</option>
+          </select>
+        ` : `<span class="inline-flex px-3 py-1 rounded-full text-xs border ${statusPill(it.graduationStatus)}">${it.graduationStatus || 'Menunggu'}</span>`;
         
         const announcedPill = it.announced 
           ? `<span class="ml-2 inline-flex px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Diumumkan</span>`
@@ -1856,7 +1872,7 @@
             <td class="px-4 py-3 text-emerald-200/80">${displayTeacher}</td>
             <td class="px-4 py-3">
               <div class="flex items-center">
-                <span class="inline-flex px-3 py-1 rounded-full text-xs border ${statusPill(it.graduationStatus)}">${it.graduationStatus || 'Menunggu'}</span>
+                ${graduationSelect}
                 ${announcedPill}
                 ${manualPill}
                 ${autoPill}
@@ -1870,6 +1886,23 @@
             </td>
           </tr>
         `);
+      });
+
+      // Add event listeners for status selects
+      document.querySelectorAll('.grad-status-select').forEach(select => {
+        select.addEventListener('change', async () => {
+          const id = select.dataset.id;
+          const status = select.value;
+          try {
+            await window.dataSdk?.update?.('schedules', id, { graduationStatus: status });
+            showToast(`Status kelulusan berhasil diperbarui menjadi ${status}.`, 'success');
+            renderGraduationTable();
+            renderCertificateTable();
+          } catch (err) {
+            console.error('Update graduation status error:', err);
+            showToast('Gagal memperbarui status kelulusan.', 'error');
+          }
+        });
       });
 
       // Add event listeners for grad-action buttons
@@ -3383,6 +3416,27 @@
       } catch (err) {
         console.error('Error saving cert link:', err);
         showToast('Gagal menyimpan link.', 'error');
+      }
+    });
+
+    document.getElementById('students-table-body')?.addEventListener('change', async (e) => {
+      const select = e.target.closest('.student-grad-select');
+      if (!select) return;
+      try { requireOperator(); } catch { return; }
+      const id = select.dataset.id;
+      const status = select.value;
+      const item = students.find(s => s.id === id);
+      if (!item) return;
+
+      try {
+        await window.dataSdk?.update?.('students', id, { graduationStatus: status });
+        showToast(`Status kelulusan ${item.name} diperbarui menjadi ${status}.`, 'success');
+        // Refresh UI
+        renderStudents();
+        renderGraduationTable();
+      } catch (err) {
+        console.error('Update graduation error:', err);
+        showToast('Gagal memperbarui status kelulusan.', 'error');
       }
     });
 
