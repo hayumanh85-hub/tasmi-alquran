@@ -581,7 +581,7 @@
            </div>
 
            <div class="card-shine bg-emerald-900/30 rounded-2xl border border-emerald-700/40 overflow-hidden">
-            <div class="overflow-auto max-h-[600px] custom-scrollbar">
+            <div class="overflow-x-auto">
              <table class="min-w-full text-sm">
               <thead class="bg-emerald-950/40 text-emerald-200">
                <tr>
@@ -599,6 +599,24 @@
             </div>
             <div id="students-empty" class="hidden py-12 text-center text-emerald-200/50">
              Belum ada data siswa.
+            </div>
+            
+            <!-- Pagination -->
+            <div id="students-pagination" class="px-6 py-4 bg-emerald-950/20 border-t border-emerald-700/30 flex items-center justify-between">
+             <div class="text-xs text-emerald-400/60">
+              Menampilkan <span id="students-range" class="text-emerald-200 font-medium">-</span> dari <span id="students-total" class="text-emerald-200 font-medium">-</span> data
+             </div>
+             <div class="flex items-center gap-2">
+              <button id="students-prev" class="p-2 rounded-lg border border-emerald-700/50 text-emerald-400 hover:bg-emerald-800/30 transition disabled:opacity-30 disabled:cursor-not-allowed">
+               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+              </button>
+              <div id="students-pages" class="flex items-center gap-1">
+               <!-- Page numbers -->
+              </div>
+              <button id="students-next" class="p-2 rounded-lg border border-emerald-700/50 text-emerald-400 hover:bg-emerald-800/30 transition disabled:opacity-30 disabled:cursor-not-allowed">
+               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+              </button>
+             </div>
             </div>
            </div>
           </div>

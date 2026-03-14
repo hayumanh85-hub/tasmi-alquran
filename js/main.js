@@ -39,6 +39,7 @@
     let schedules = [];
     let announcements = [];
     let pentasmiAccounts = [];
+    let studentsCurrentPage = 1;
     let certificates = {}; // Cloud-only
     let congratulations = {}; // Cloud-only
     if (!certificates || Array.isArray(certificates)) certificates = {};
@@ -1513,17 +1514,65 @@
         );
       }
 
-      list = list.sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')))
-        .slice(0, limit);
+      list = list.sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
+
+      const totalItems = list.length;
+      const totalPages = Math.ceil(totalItems / limit);
+      
+      if (studentsCurrentPage > totalPages) studentsCurrentPage = Math.max(1, totalPages);
+      
+      const start = (studentsCurrentPage - 1) * limit;
+      const end = start + limit;
+      const paginatedList = list.slice(start, end);
 
       tbody.innerHTML = '';
-      if (list.length === 0) {
+      if (paginatedList.length === 0) {
         emptyEl?.classList.remove('hidden');
+        document.getElementById('students-pagination')?.classList.add('hidden');
         return;
       }
       emptyEl?.classList.add('hidden');
+      document.getElementById('students-pagination')?.classList.remove('hidden');
 
-      list.forEach((s, index) => {
+      // Update Pagination UI
+      const rangeEl = document.getElementById('students-range');
+      const totalEl = document.getElementById('students-total');
+      const prevBtn = document.getElementById('students-prev');
+      const nextBtn = document.getElementById('students-next');
+      const pagesEl = document.getElementById('students-pages');
+
+      if (rangeEl) rangeEl.textContent = `${start + 1} - ${Math.min(end, totalItems)}`;
+      if (totalEl) totalEl.textContent = totalItems;
+      if (prevBtn) prevBtn.disabled = studentsCurrentPage === 1;
+      if (nextBtn) nextBtn.disabled = studentsCurrentPage === totalPages;
+
+      if (pagesEl) {
+        pagesEl.innerHTML = '';
+        const maxVisiblePages = 5;
+        let startPage = Math.max(1, studentsCurrentPage - Math.floor(maxVisiblePages / 2));
+        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+        
+        if (endPage - startPage + 1 < maxVisiblePages) {
+          startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+          const btn = document.createElement('button');
+          btn.textContent = i;
+          btn.className = `px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            i === studentsCurrentPage 
+              ? 'bg-gold-500 text-emerald-950 shadow-lg shadow-gold-500/20' 
+              : 'text-emerald-400 hover:bg-emerald-800/30 border border-emerald-700/30'
+          }`;
+          btn.onclick = () => {
+            studentsCurrentPage = i;
+            renderStudents();
+          };
+          pagesEl.appendChild(btn);
+        }
+      }
+
+      paginatedList.forEach((s, index) => {
         const getStatusColor = (st) => {
           if (st === 'Lulus') return 'text-green-400 border-green-500/30 bg-green-500/10';
           if (st === 'Tidak Lulus') return 'text-red-400 border-red-500/30 bg-red-500/10';
@@ -1553,7 +1602,7 @@
 
         tbody.insertAdjacentHTML('beforeend', `
           <tr class="hover:bg-emerald-800/20 transition-colors group">
-            <td class="px-4 py-4 text-emerald-200/50 font-mono">${index + 1}</td>
+            <td class="px-4 py-4 text-emerald-200/50 font-mono">${start + index + 1}</td>
             <td class="px-4 py-4">
               <div class="flex items-center gap-3">
                 ${photoHtml}
@@ -3281,9 +3330,36 @@
     document.getElementById('add-student-btn')?.addEventListener('click', () => openStudentModal());
     document.getElementById('student-modal-close')?.addEventListener('click', () => closeStudentModal());
     document.getElementById('student-modal-cancel')?.addEventListener('click', () => closeStudentModal());
-    document.getElementById('students-entries')?.addEventListener('change', () => renderStudents());
-    document.getElementById('students-period-filter')?.addEventListener('change', () => renderStudents());
-    document.getElementById('students-search')?.addEventListener('input', () => renderStudents());
+    document.getElementById('students-entries')?.addEventListener('change', () => {
+      studentsCurrentPage = 1;
+      renderStudents();
+    });
+    document.getElementById('students-period-filter')?.addEventListener('change', () => {
+      studentsCurrentPage = 1;
+      renderStudents();
+    });
+    document.getElementById('students-search')?.addEventListener('input', () => {
+      studentsCurrentPage = 1;
+      renderStudents();
+    });
+
+    document.getElementById('students-prev')?.addEventListener('click', () => {
+      if (studentsCurrentPage > 1) {
+        studentsCurrentPage--;
+        renderStudents();
+      }
+    });
+
+    document.getElementById('students-next')?.addEventListener('click', () => {
+      const entriesSelect = document.getElementById('students-entries');
+      const limit = parseInt(entriesSelect?.value || '10');
+      const totalItems = students.length;
+      const totalPages = Math.ceil(totalItems / limit);
+      if (studentsCurrentPage < totalPages) {
+        studentsCurrentPage++;
+        renderStudents();
+      }
+    });
 
     // Student photo preview logic
     document.getElementById('student-photo-input')?.addEventListener('change', (e) => {
