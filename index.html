@@ -57,6 +57,26 @@
   <link rel="stylesheet" href="css/style.css">
  </head>
  <body class="h-full font-poppins">
+  <!-- Loading Animation -->
+  <div id="loading-screen" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-emerald-950 transition-opacity duration-700">
+    <div class="relative">
+      <!-- Outer Rotating Ring -->
+      <div class="w-24 h-24 rounded-full border-4 border-emerald-800/30 border-t-gold-500 animate-spin"></div>
+      <!-- Inner Glowing Circle -->
+      <div class="absolute inset-0 flex items-center justify-center">
+        <div class="w-16 h-16 rounded-full bg-emerald-900 flex items-center justify-center shadow-[0_0_20px_rgba(212,175,55,0.2)]">
+          <span class="text-gold-400 font-amiri font-bold text-3xl animate-pulse">ت</span>
+        </div>
+      </div>
+    </div>
+    <div class="mt-6 flex flex-col items-center">
+      <h2 class="text-gold-400 font-amiri text-2xl tracking-widest animate-pulse">Tasmi' Al-Quran</h2>
+      <div class="mt-2 w-32 h-1 bg-emerald-800/50 rounded-full overflow-hidden">
+        <div class="h-full bg-gradient-to-r from-gold-600 to-gold-400 animate-[loading-bar_2s_ease-in-out_infinite]"></div>
+      </div>
+    </div>
+  </div>
+
   <div class="app-wrapper bg-gradient-to-b from-emerald-950 via-emerald-900 to-emerald-950 islamic-pattern overflow-auto">
    <nav id="navbar" class="sticky top-0 z-50 bg-emerald-950/95 backdrop-blur-md border-b border-gold-500/30">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

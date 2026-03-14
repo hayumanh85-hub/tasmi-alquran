@@ -3471,6 +3471,17 @@
       } else {
         navigateTo(isElectron ? 'login-operator' : 'beranda');
       }
+
+      // Hide loading screen after everything is initialized
+      const loadingScreen = document.getElementById('loading-screen');
+      if (loadingScreen) {
+        setTimeout(() => {
+          loadingScreen.classList.add('fade-out');
+          setTimeout(() => {
+            loadingScreen.remove();
+          }, 700); // match duration-700
+        }, 800); // give a little extra time for smooth feeling
+      }
     });
 
     // Final check: expose critical functions to window explicitly
