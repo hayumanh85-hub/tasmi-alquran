@@ -823,24 +823,50 @@
     function renderGraduationBoard() {
       const tbody = document.getElementById('graduation-announcement-table');
       const searchInput = document.getElementById('grad-search-input');
+      const periodFilter = document.getElementById('grad-period-filter');
       if (!tbody) return;
 
       const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+      const selectedPeriod = periodFilter ? periodFilter.value : '';
 
       // Ambil data kelulusan dari koleksi announcements (Hasil Resmi)
       let allResults = [];
+      const periods = new Set();
+
       (announcements || []).forEach(ann => {
         if (ann.studentResults && Array.isArray(ann.studentResults)) {
+          // Format periode untuk filter: "Bulan Tahun"
+          const dateObj = new Date(ann.date);
+          const monthYear = dateObj.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+          periods.add(monthYear);
+
           ann.studentResults.forEach(res => {
-            // Masukkan semua status (Lulus maupun Tidak Lulus)
             allResults.push({
               ...res,
               announcementId: ann.id,
-              annDate: ann.date
+              annDate: ann.date,
+              period: monthYear
             });
           });
         }
       });
+
+      // Update dropdown periode jika belum ada atau data berubah
+      if (periodFilter && periodFilter.options.length <= 1 && periods.size > 0) {
+        const sortedPeriods = Array.from(periods).sort((a, b) => {
+          // Sort desc by date
+          const dateA = new Date(a.split(' ').reverse().join(' '));
+          const dateB = new Date(b.split(' ').reverse().join(' '));
+          return dateB - dateA;
+        });
+        
+        sortedPeriods.forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p;
+          opt.textContent = p;
+          periodFilter.appendChild(opt);
+        });
+      }
 
       // Filter berdasarkan pencarian nama
       if (searchTerm) {
@@ -849,14 +875,19 @@
         );
       }
 
+      // Filter berdasarkan periode
+      if (selectedPeriod) {
+        allResults = allResults.filter(res => res.period === selectedPeriod);
+      }
+
       // Urutkan berdasarkan tanggal terbaru
       allResults.sort((a, b) => String(b.annDate || '').localeCompare(String(a.annDate || '')));
 
       if (allResults.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="3" class="px-6 py-10 text-center text-emerald-200/50 italic">
-              ${searchTerm ? `Tidak ditemukan siswa dengan nama "${searchTerm}"` : 'Belum ada pengumuman kelulusan terbaru.'}
+            <td colspan="4" class="px-6 py-10 text-center text-emerald-200/50 italic">
+              ${searchTerm || selectedPeriod ? 'Data tidak ditemukan untuk kriteria tersebut.' : 'Belum ada pengumuman kelulusan terbaru.'}
             </td>
           </tr>`;
         return;
@@ -878,14 +909,18 @@
                 </div>
                 <div class="flex flex-col">
                   <span class="text-white font-bold group-hover:text-gold-400 transition-colors">${res.studentName}</span>
-                  <div class="mt-1">${statusBadge}</div>
+                  <div class="mt-1 md:hidden">${statusBadge}</div>
                 </div>
               </div>
             </td>
+            <td class="px-6 py-4 text-emerald-300/60 text-xs hidden md:table-cell">
+              ${formatDateId(res.annDate)}
+            </td>
             <td class="px-6 py-4">
               <div class="flex items-center justify-between">
-                <span class="text-emerald-300/80 text-xs italic group-hover:text-gold-300 transition-colors">
-                  Lihat detail (klik untuk melihat detail kelulusan)
+                <div class="hidden md:block">${statusBadge}</div>
+                <span class="text-emerald-300/80 text-[10px] italic group-hover:text-gold-300 transition-colors md:hidden">
+                  Klik untuk detail
                 </span>
                 <svg class="w-5 h-5 text-emerald-500/30 group-hover:text-gold-500 transform group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
               </div>
@@ -895,9 +930,9 @@
       }).join('');
     }
 
-    // Set up search event listener
+    // Set up filter event listeners
     document.addEventListener('input', (e) => {
-      if (e.target.id === 'grad-search-input') {
+      if (e.target.id === 'grad-search-input' || e.target.id === 'grad-period-filter') {
         renderGraduationBoard();
       }
     });
