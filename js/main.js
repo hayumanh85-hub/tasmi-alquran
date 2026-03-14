@@ -829,13 +829,12 @@
       (announcements || []).forEach(ann => {
         if (ann.studentResults && Array.isArray(ann.studentResults)) {
           ann.studentResults.forEach(res => {
-            if (res.status === 'Lulus') {
-              allResults.push({
-                ...res,
-                announcementId: ann.id,
-                annDate: ann.date
-              });
-            }
+            // Masukkan semua status (Lulus maupun Tidak Lulus)
+            allResults.push({
+              ...res,
+              announcementId: ann.id,
+              annDate: ann.date
+            });
           });
         }
       });
@@ -853,27 +852,37 @@
         return;
       }
 
-      tbody.innerHTML = allResults.map((res, idx) => `
-        <tr class="hover:bg-emerald-800/20 transition-all group cursor-pointer" onclick="openGraduationDetailModal('${res.studentId}', '${res.announcementId}')">
-          <td class="px-6 py-4 text-emerald-200 font-medium">${idx + 1}.</td>
-          <td class="px-6 py-4">
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full bg-emerald-950/50 flex items-center justify-center text-gold-400 group-hover:scale-110 transition-transform">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+      tbody.innerHTML = allResults.map((res, idx) => {
+        const isPassed = res.status === 'Lulus';
+        const statusBadge = isPassed 
+          ? '<span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold border border-emerald-500/30">LULUS</span>'
+          : '<span class="px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 text-[10px] font-bold border border-red-500/30">MENGULANG</span>';
+
+        return `
+          <tr class="hover:bg-emerald-800/20 transition-all group cursor-pointer" onclick="openGraduationDetailModal('${res.studentId}', '${res.announcementId}')">
+            <td class="px-6 py-4 text-emerald-200 font-medium">${idx + 1}.</td>
+            <td class="px-6 py-4">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-emerald-950/50 flex items-center justify-center text-gold-400 group-hover:scale-110 transition-transform">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                </div>
+                <div class="flex flex-col">
+                  <span class="text-white font-bold group-hover:text-gold-400 transition-colors">${res.studentName}</span>
+                  <div class="mt-1">${statusBadge}</div>
+                </div>
               </div>
-              <span class="text-white font-bold group-hover:text-gold-400 transition-colors">${res.studentName}</span>
-            </div>
-          </td>
-          <td class="px-6 py-4">
-            <div class="flex items-center justify-between">
-              <span class="text-emerald-300/80 text-xs italic group-hover:text-gold-300 transition-colors">
-                Lihat detail (klik untuk melihat detail kelulusan)
-              </span>
-              <svg class="w-5 h-5 text-emerald-500/30 group-hover:text-gold-500 transform group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-            </div>
-          </td>
-        </tr>
-      `).join('');
+            </td>
+            <td class="px-6 py-4">
+              <div class="flex items-center justify-between">
+                <span class="text-emerald-300/80 text-xs italic group-hover:text-gold-300 transition-colors">
+                  Lihat detail (klik untuk melihat detail kelulusan)
+                </span>
+                <svg class="w-5 h-5 text-emerald-500/30 group-hover:text-gold-500 transform group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
     }
 
     function renderPublicAnnouncements() {
