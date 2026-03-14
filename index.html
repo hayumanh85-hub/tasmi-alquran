@@ -57,26 +57,6 @@
   <link rel="stylesheet" href="css/style.css">
  </head>
  <body class="h-full font-poppins">
-  <!-- Loading Animation -->
-  <div id="loading-screen" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-emerald-950 transition-opacity duration-700">
-    <div class="relative">
-      <!-- Outer Rotating Ring -->
-      <div class="w-24 h-24 rounded-full border-4 border-emerald-800/30 border-t-gold-500 animate-spin"></div>
-      <!-- Inner Glowing Circle -->
-      <div class="absolute inset-0 flex items-center justify-center">
-        <div class="w-16 h-16 rounded-full bg-emerald-900 flex items-center justify-center shadow-[0_0_20px_rgba(212,175,55,0.2)]">
-          <span class="text-gold-400 font-amiri font-bold text-3xl animate-pulse">ت</span>
-        </div>
-      </div>
-    </div>
-    <div class="mt-6 flex flex-col items-center">
-      <h2 class="text-gold-400 font-amiri text-2xl tracking-widest animate-pulse">Tasmi' Al-Quran</h2>
-      <div class="mt-2 w-32 h-1 bg-emerald-800/50 rounded-full overflow-hidden">
-        <div class="h-full bg-gradient-to-r from-gold-600 to-gold-400 animate-[loading-bar_2s_ease-in-out_infinite]"></div>
-      </div>
-    </div>
-  </div>
-
   <div class="app-wrapper bg-gradient-to-b from-emerald-950 via-emerald-900 to-emerald-950 islamic-pattern overflow-auto">
    <nav id="navbar" class="sticky top-0 z-50 bg-emerald-950/95 backdrop-blur-md border-b border-gold-500/30">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -225,77 +205,14 @@
     <section id="page-pengumuman" class="page-section hidden">
      <div class="py-16 px-4">
       <div class="max-w-4xl mx-auto">
-       <!-- Pengumuman Informasi Manual -->
        <div class="text-center mb-12">
-        <h2 class="star-decoration text-3xl md:text-4xl font-bold text-white mb-4">Informasi Umum</h2>
+        <h2 class="star-decoration text-3xl md:text-4xl font-bold text-white mb-4">Pengumuman</h2>
         <div class="geometric-border w-32 mx-auto mb-4"></div>
-        <p class="text-emerald-200/70">Berita dan kegiatan terbaru yang diunggah oleh operator</p>
+        <p class="text-emerald-200/70">Informasi terbaru seputar program Tasmi'</p>
        </div>
-       <div id="public-announcements-container" class="space-y-6 mb-20">
+       <div id="public-announcements-container" class="space-y-6">
         <div class="text-center py-10 card-shine bg-emerald-800/30 rounded-2xl border border-gold-500/20">
           <p class="text-emerald-200/70">Belum ada pengumuman terbaru.</p>
-        </div>
-       </div>
-
-       <!-- Papan Pengumuman Kelulusan Otomatis -->
-       <div class="mb-12 pt-10 border-t border-emerald-800/30">
-        <h3 class="text-xl font-semibold text-gold-400 mb-6 flex items-center gap-2">
-         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-         Papan Pengumuman Kelulusan Siswa
-        </h3>
-        
-        <!-- Filters (Search & Period) -->
-        <div class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <!-- Search Bar -->
-          <div class="md:col-span-2 relative group">
-            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <svg class="w-5 h-5 text-emerald-500/50 group-focus-within:text-gold-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-              </svg>
-            </div>
-            <input type="text" id="grad-search-input" 
-              class="w-full bg-emerald-900/40 border border-emerald-700/50 rounded-2xl py-3 pl-12 pr-4 text-white placeholder-emerald-500/50 focus:outline-none focus:border-gold-500/50 focus:ring-1 focus:ring-gold-500/20 transition-all shadow-inner" 
-              placeholder="Cari nama siswa...">
-          </div>
-
-          <!-- Period Filter -->
-          <div class="relative group">
-            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <svg class="w-5 h-5 text-emerald-500/50 group-focus-within:text-gold-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-              </svg>
-            </div>
-            <select id="grad-period-filter" 
-              class="w-full bg-emerald-900/40 border border-emerald-700/50 rounded-2xl py-3 pl-12 pr-4 text-white appearance-none focus:outline-none focus:border-gold-500/50 focus:ring-1 focus:ring-gold-500/20 transition-all cursor-pointer shadow-inner">
-              <option value="">Semua Periode</option>
-            </select>
-            <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-emerald-500/50 group-focus-within:text-gold-500">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-            </div>
-          </div>
-        </div>
-
-        <div class="card-shine bg-emerald-900/30 rounded-2xl border border-emerald-700/40 overflow-hidden shadow-xl">
-         <div class="overflow-x-auto">
-          <table class="min-w-full text-sm">
-           <thead class="bg-emerald-950/60 text-emerald-200">
-            <tr>
-             <th class="px-6 py-4 text-left font-bold uppercase tracking-wider w-16">No</th>
-             <th class="px-6 py-4 text-left font-bold uppercase tracking-wider">Nama Siswa</th>
-             <th class="px-6 py-4 text-left font-bold uppercase tracking-wider hidden md:table-cell">Bulan Kelulusan</th>
-             <th class="px-6 py-4 text-left font-bold uppercase tracking-wider">Status</th>
-            </tr>
-           </thead>
-           <tbody id="graduation-announcement-table" class="divide-y divide-emerald-700/40 bg-emerald-900/10">
-            <!-- Data kelulusan akan muncul di sini -->
-            <tr>
-             <td colspan="3" class="px-6 py-10 text-center text-emerald-200/50 italic">
-              Memuat data kelulusan...
-             </td>
-            </tr>
-           </tbody>
-          </table>
-         </div>
         </div>
        </div>
       </div>
@@ -733,47 +650,35 @@
           </div>
 
           <div id="operator-tab-announcements" class="operator-tab hidden">
-           <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-            <div>
-             <h3 class="text-xl font-bold text-white mb-2">Kelola Pengumuman</h3>
-             <p class="text-emerald-200/70 text-sm">Data di sini akan mengganti pengumuman publik.</p>
-            </div>
-            <div id="ann-bulk-actions" class="hidden flex items-center gap-3 animate-fade-in">
-              <span id="ann-selected-count" class="text-gold-400 text-sm font-medium">0 terpilih</span>
-              <button id="ann-bulk-delete-btn" class="px-4 py-2 rounded-xl bg-red-500/20 border border-red-500/50 text-red-300 hover:bg-red-500/30 transition flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                Hapus Cepat
-              </button>
-            </div>
-           </div>
-
-           <form id="ann-form" class="card-shine bg-emerald-900/30 rounded-2xl p-6 border border-emerald-700/40 mb-6">
+           <h3 class="text-xl font-bold text-white mb-2">Kelola Pengumuman</h3>
+           <p class="text-emerald-200/70 text-sm mb-6">Data di sini akan mengganti pengumuman publik.</p>
+           <form id="ann-form" class="card-shine bg-emerald-900/30 rounded-2xl p-4 border border-emerald-700/40 mb-4">
             <input type="hidden" id="ann-id">
-            <div class="grid md:grid-cols-2 gap-4">
+            <div class="grid md:grid-cols-2 gap-3">
              <div class="md:col-span-2">
-              <label class="block text-emerald-200 mb-2 font-medium" for="ann-title">Judul</label>
-              <input id="ann-title" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none" required>
+              <label class="block text-emerald-200 mb-1 text-sm font-medium" for="ann-title">Judul</label>
+              <input id="ann-title" class="input-field w-full px-3 py-2 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white text-sm focus:border-gold-500 focus:outline-none" required>
              </div>
              <div>
-              <label class="block text-emerald-200 mb-2 font-medium" for="ann-tag">Tag</label>
-              <select id="ann-tag" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none">
+              <label class="block text-emerald-200 mb-1 text-sm font-medium" for="ann-tag">Tag</label>
+              <select id="ann-tag" class="input-field w-full px-3 py-2 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white text-sm focus:border-gold-500 focus:outline-none">
                <option value="Info">Info</option>
                <option value="Penting">Penting</option>
                <option value="Kegiatan">Kegiatan</option>
               </select>
              </div>
              <div>
-              <label class="block text-emerald-200 mb-2 font-medium" for="ann-date">Tanggal</label>
-              <input id="ann-date" type="date" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none" required>
+              <label class="block text-emerald-200 mb-1 text-sm font-medium" for="ann-date">Tanggal</label>
+              <input id="ann-date" type="date" class="input-field w-full px-3 py-2 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white text-sm focus:border-gold-500 focus:outline-none" required>
              </div>
              <div class="md:col-span-2">
-              <label class="block text-emerald-200 mb-2 font-medium" for="ann-body">Isi</label>
-              <textarea id="ann-body" rows="4" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none resize-none" required></textarea>
+              <label class="block text-emerald-200 mb-1 text-sm font-medium" for="ann-body">Isi</label>
+              <textarea id="ann-body" rows="2" class="input-field w-full px-3 py-2 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white text-sm focus:border-gold-500 focus:outline-none resize-none" required></textarea>
              </div>
             </div>
-            <div class="flex gap-3 mt-5">
-             <button type="submit" class="px-5 py-3 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 text-emerald-950 font-semibold hover:from-gold-400 hover:to-gold-500 transition">Simpan</button>
-             <button type="button" id="ann-reset" class="px-5 py-3 rounded-xl border border-emerald-700/60 text-emerald-100 hover:border-gold-500/40 transition">Reset</button>
+            <div class="flex gap-2 mt-4">
+             <button type="submit" class="px-4 py-2 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 text-emerald-950 text-sm font-semibold hover:from-gold-400 hover:to-gold-500 transition">Simpan</button>
+             <button type="button" id="ann-reset" class="px-4 py-2 rounded-xl border border-emerald-700/60 text-emerald-100 text-sm hover:border-gold-500/40 transition">Reset</button>
             </div>
            </form>
            <div id="ann-list" class="space-y-3"></div>
@@ -796,7 +701,6 @@
               <tr>
                <th class="text-left px-4 py-3">Nama Siswa</th>
                <th class="text-left px-4 py-3">Kelas / Juz</th>
-               <th class="text-left px-4 py-3 italic">Periode</th>
                <th class="text-left px-4 py-3">Sertifikat</th>
                <th class="text-right px-4 py-3">Aksi</th>
               </tr>
@@ -1057,15 +961,9 @@
          <input id="student-juz" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none" placeholder="Contoh: 30">
         </div>
        </div>
-       <div class="grid grid-cols-2 gap-4">
-        <div>
-         <label class="block text-emerald-200 mb-2 font-medium" for="student-period">Periode Kelulusan</label>
-         <input id="student-period" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none" placeholder="Contoh: Maret 2024">
-        </div>
-        <div>
-         <label class="block text-emerald-200 mb-2 font-medium" for="student-exam-date">Tanggal Uji</label>
-         <input id="student-exam-date" type="date" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none">
-        </div>
+       <div>
+        <label class="block text-emerald-200 mb-2 font-medium" for="student-period">Periode / Tahun Ajaran</label>
+        <input id="student-period" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none" placeholder="Contoh: 2024/2025 Genap">
        </div>
        <div>
         <label class="block text-emerald-200 mb-2 font-medium" for="student-notes">Catatan</label>

@@ -329,7 +329,6 @@
           onDataChanged(data) {
             announcements = data;
             renderPublicAnnouncements();
-            if (window.renderGraduationBoard) window.renderGraduationBoard();
             if (isOperatorLoggedIn()) renderAnnouncementsAdmin();
           }
         });
@@ -723,30 +722,10 @@
     };
 
     window.openGraduationDetailModal = function(studentId, announcementId) {
-      let res = null;
-      let date = '-';
-
-      if (announcementId) {
-        const ann = (announcements || []).find(a => a.id === announcementId);
-        if (ann && ann.studentResults) {
-          res = ann.studentResults.find(r => r.studentId === studentId);
-          date = ann.date;
-        }
-      } else {
-        // Find from schedules if no announcementId provided (from graduation board)
-        const schedule = (schedules || []).find(s => s.studentId === studentId && s.graduationStatus === 'Lulus');
-        if (schedule) {
-          res = {
-            studentId: schedule.studentId,
-            studentName: schedule.studentName,
-            status: schedule.graduationStatus,
-            juz: schedule.juz || '-',
-            motivation: null
-          };
-          date = schedule.date;
-        }
-      }
-
+      const ann = (announcements || []).find(a => a.id === announcementId);
+      if (!ann || !ann.studentResults) return;
+      
+      const res = ann.studentResults.find(r => r.studentId === studentId);
       if (!res) return;
 
       const modal = document.getElementById('graduation-detail-modal');
@@ -767,7 +746,7 @@
       statusEl.className = `text-lg font-semibold uppercase tracking-widest ${isPassed ? 'text-emerald-400' : 'text-red-400'}`;
       
       juzEl.textContent = res.juz || '-';
-      dateEl.textContent = formatDateId(date);
+      dateEl.textContent = formatDateId(ann.date);
       motivationEl.textContent = res.motivation || (isPassed ? "Barakallahu fiikum! Teruslah menjaga hafalanmu." : "Jangan menyerah! Setiap ayat yang dihafal adalah pahala yang besar.");
       
       // Icons
@@ -820,128 +799,6 @@
       document.body.classList.add('overflow-hidden');
     };
 
-    window.renderGraduationBoard = function() {
-      const tbody = document.getElementById('graduation-announcement-table');
-      const searchInput = document.getElementById('grad-search-input');
-      const periodFilter = document.getElementById('grad-period-filter');
-      if (!tbody) return;
-
-      const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
-      const selectedPeriod = periodFilter ? periodFilter.value : '';
-
-      // Ambil data kelulusan dari koleksi announcements (Hasil Resmi)
-      let allResults = [];
-      const periods = new Set();
-
-      (announcements || []).forEach(ann => {
-        if (ann.studentResults && Array.isArray(ann.studentResults)) {
-          ann.studentResults.forEach(res => {
-            // Gunakan periode dari data siswa (res.period) jika ada, jika tidak gunakan bulan/tahun dari tanggal pengumuman
-            let displayPeriod = res.period;
-            if (!displayPeriod) {
-              const dateObj = new Date(res.date || ann.date);
-              displayPeriod = dateObj.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
-            }
-            
-            periods.add(displayPeriod);
-
-            allResults.push({
-              ...res,
-              announcementId: ann.id,
-              annDate: res.date || ann.date,
-              displayPeriod: displayPeriod
-            });
-          });
-        }
-      });
-
-      // Update dropdown periode jika belum ada atau data berubah
-      if (periodFilter && periodFilter.options.length <= 1 && periods.size > 0) {
-        const sortedPeriods = Array.from(periods).sort((a, b) => {
-          // Attempt to sort by date if it's a standard Month Year format, else string sort
-          const dateA = new Date(a.split(' ').reverse().join(' '));
-          const dateB = new Date(b.split(' ').reverse().join(' '));
-          if (!isNaN(dateA) && !isNaN(dateB)) return dateB - dateA;
-          return b.localeCompare(a);
-        });
-        
-        sortedPeriods.forEach(p => {
-          const opt = document.createElement('option');
-          opt.value = p;
-          opt.textContent = p;
-          periodFilter.appendChild(opt);
-        });
-      }
-
-      // Filter berdasarkan pencarian nama
-      if (searchTerm) {
-        allResults = allResults.filter(res => 
-          res.studentName.toLowerCase().includes(searchTerm)
-        );
-      }
-
-      // Filter berdasarkan periode
-      if (selectedPeriod) {
-        allResults = allResults.filter(res => res.displayPeriod === selectedPeriod);
-      }
-
-      // Urutkan berdasarkan tanggal terbaru
-      allResults.sort((a, b) => String(b.annDate || '').localeCompare(String(a.annDate || '')));
-
-      if (allResults.length === 0) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="4" class="px-6 py-10 text-center text-emerald-200/50 italic">
-              ${searchTerm || selectedPeriod ? 'Data tidak ditemukan untuk kriteria tersebut.' : 'Belum ada pengumuman kelulusan terbaru.'}
-            </td>
-          </tr>`;
-        return;
-      }
-
-      tbody.innerHTML = allResults.map((res, idx) => {
-        const isPassed = res.status === 'Lulus';
-        const statusBadge = isPassed 
-          ? '<span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold border border-emerald-500/30">LULUS</span>'
-          : '<span class="px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 text-[10px] font-bold border border-red-500/30">MENGULANG</span>';
-
-        return `
-          <tr class="hover:bg-emerald-800/20 transition-all group cursor-pointer" onclick="openGraduationDetailModal('${res.studentId}', '${res.announcementId}')">
-            <td class="px-6 py-4 text-emerald-200 font-medium">${idx + 1}.</td>
-            <td class="px-6 py-4">
-              <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-emerald-950/50 flex items-center justify-center text-gold-400 group-hover:scale-110 transition-transform">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                </div>
-                <div class="flex flex-col">
-                  <span class="text-white font-bold group-hover:text-gold-400 transition-colors">${res.studentName}</span>
-                  <div class="mt-1 md:hidden">${statusBadge}</div>
-                </div>
-              </div>
-            </td>
-            <td class="px-6 py-4 text-emerald-300/60 text-xs hidden md:table-cell">
-              ${res.displayPeriod}
-            </td>
-            <td class="px-6 py-4">
-              <div class="flex items-center justify-between">
-                <div class="hidden md:block">${statusBadge}</div>
-                <span class="text-emerald-300/80 text-[10px] italic group-hover:text-gold-300 transition-colors md:hidden">
-                  Klik untuk detail
-                </span>
-                <svg class="w-5 h-5 text-emerald-500/30 group-hover:text-gold-500 transform group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-              </div>
-            </td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    // Set up filter event listeners
-    document.addEventListener('input', (e) => {
-      if (e.target.id === 'grad-search-input' || e.target.id === 'grad-period-filter') {
-        renderGraduationBoard();
-      }
-    });
-
     function renderPublicAnnouncements() {
       const container = document.getElementById('public-announcements-container');
       if (!container) return;
@@ -965,37 +822,72 @@
       items
         .slice()
         .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')))
-        .filter(it => !(it.studentResults && Array.isArray(it.studentResults) && it.studentResults.length > 0)) // Filter out graduation announcements
         .forEach(it => {
-          // Regular Info Announcement: Direct Box Style
-          container.insertAdjacentHTML('beforeend', `
-            <div class="card-shine bg-emerald-800/30 backdrop-blur-sm rounded-2xl p-6 border border-emerald-700/40 hover:border-gold-500/30 transition-all mb-6">
-              <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-xl bg-emerald-950/50 flex items-center justify-center text-gold-400">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                  </div>
-                  <div>
-                    <h3 class="text-base font-bold text-white">${it.title || '-'}</h3>
-                    <p class="text-[10px] text-emerald-500/60">${formatDateId(it.date)}</p>
-                  </div>
-                </div>
-                <span class="px-2 py-1 rounded-full text-[10px] font-medium ${tagClass(it.tag)}">${it.tag || 'Info'}</span>
-              </div>
-              <div class="text-emerald-200/80 text-sm leading-relaxed whitespace-pre-line">
-                ${it.body || ''}
-              </div>
-            </div>
-          `);
-        });
+          const isGraduation = it.studentResults && Array.isArray(it.studentResults) && it.studentResults.length > 0;
 
-      // Show empty message if all announcements were filtered out
-      if (container.innerHTML === '') {
-        container.innerHTML = `
-          <div class="text-center py-10 card-shine bg-emerald-800/30 rounded-2xl border border-gold-500/20">
-            <p class="text-emerald-200/70">Belum ada pengumuman terbaru.</p>
-          </div>`;
-      }
+          if (isGraduation) {
+            // Graduation Announcement: Table Style
+            const tableRows = it.studentResults.map((res, idx) => `
+              <tr class="hover:bg-emerald-800/20 transition-colors group cursor-pointer" onclick="openGraduationDetailModal('${res.studentId}', '${it.id}')">
+                <td class="px-4 py-3">
+                  <div class="flex items-center gap-3">
+                    <div class="w-1.5 h-1.5 rounded-full ${res.status === 'Lulus' ? 'bg-emerald-400' : 'bg-red-400'}"></div>
+                    <span class="text-white text-sm font-medium group-hover:text-gold-400 transition-colors">${res.studentName}</span>
+                  </div>
+                </td>
+                <td class="px-4 py-3 text-right">
+                  <svg class="w-4 h-4 text-emerald-500/30 group-hover:text-gold-500 transition-colors inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </td>
+              </tr>
+            `).join('');
+
+            container.insertAdjacentHTML('beforeend', `
+              <div class="card-shine bg-emerald-800/30 backdrop-blur-sm rounded-2xl border border-gold-500/20 overflow-hidden mb-6">
+                <div class="p-5 border-b border-emerald-700/30 bg-emerald-950/20 flex items-center justify-between">
+                  <div>
+                    <h3 class="text-sm font-bold text-white">${it.title || 'Hasil Tasmi'}</h3>
+                    <p class="text-[10px] text-emerald-500/60 mt-0.5">${formatDateId(it.date)}</p>
+                  </div>
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-medium ${tagClass(it.tag)}">${it.tag || 'Hasil'}</span>
+                </div>
+                <div class="overflow-hidden">
+                  <table class="w-full text-left">
+                    <thead class="bg-emerald-900/40 text-[10px] uppercase tracking-wider text-emerald-400">
+                      <tr>
+                        <th class="px-4 py-2 font-semibold">Nama Siswa</th>
+                        <th class="px-4 py-2 text-right">Detail</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-emerald-700/20">
+                      ${tableRows}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            `);
+          } else {
+            // Regular Info Announcement: Direct Box Style
+            container.insertAdjacentHTML('beforeend', `
+              <div class="card-shine bg-emerald-800/30 backdrop-blur-sm rounded-2xl p-6 border border-emerald-700/40 hover:border-gold-500/30 transition-all mb-6">
+                <div class="flex items-center justify-between mb-4">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-950/50 flex items-center justify-center text-gold-400">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                    <div>
+                      <h3 class="text-base font-bold text-white">${it.title || '-'}</h3>
+                      <p class="text-[10px] text-emerald-500/60">${formatDateId(it.date)}</p>
+                    </div>
+                  </div>
+                  <span class="px-2 py-1 rounded-full text-[10px] font-medium ${tagClass(it.tag)}">${it.tag || 'Info'}</span>
+                </div>
+                <div class="text-emerald-200/80 text-sm leading-relaxed whitespace-pre-line">
+                  ${it.body || ''}
+                </div>
+              </div>
+            `);
+          }
+        });
     }
 
     function viewCertificatePublic(studentId, studentName) {
@@ -1696,78 +1588,30 @@
       wrap.innerHTML = '';
       if (list.length === 0) {
         wrap.innerHTML = `<div class="text-emerald-200/70 text-sm">Belum ada pengumuman. Tambahkan dari form di atas.</div>`;
-        updateAnnBulkActions();
         return;
       }
 
       list.forEach(it => {
         wrap.insertAdjacentHTML('beforeend', `
-          <div class="p-4 rounded-xl bg-emerald-950/30 border border-emerald-700/40 flex items-start justify-between gap-4 group">
-            <div class="flex items-start gap-4">
-              <div class="mt-1">
-                <input type="checkbox" class="ann-checkbox w-5 h-5 rounded border-emerald-700 bg-emerald-900/50 text-gold-500 focus:ring-gold-500/30 cursor-pointer transition-all" data-id="${it.id}">
-              </div>
-              <div>
-                <div class="text-white font-semibold group-hover:text-gold-400 transition-colors">${it.title || '-'}</div>
-                <div class="text-emerald-200/70 text-xs mt-1">${it.tag || 'Info'} · ${formatDateId(it.date)}</div>
-                <div class="text-emerald-200/80 text-sm mt-2 line-clamp-2">${it.body || ''}</div>
+          <div class="p-3 rounded-xl bg-emerald-950/30 border border-emerald-700/40 flex items-center justify-between gap-4 group hover:border-emerald-600/60 transition-colors">
+            <div class="flex items-center gap-3 overflow-hidden">
+              <input type="checkbox" class="w-4 h-4 rounded border-emerald-700 bg-emerald-900/50 text-gold-500 focus:ring-gold-500/20 cursor-pointer">
+              <div class="overflow-hidden">
+                <div class="flex items-baseline gap-2">
+                  <div class="text-white font-semibold text-sm truncate">${it.title || '-'}</div>
+                  <div class="text-emerald-200/50 text-[10px] whitespace-nowrap">${it.tag || 'Info'} · ${formatDateId(it.date)}</div>
+                </div>
+                <div class="text-emerald-200/70 text-xs truncate mt-0.5">${it.body || ''}</div>
               </div>
             </div>
-            <div class="shrink-0 whitespace-nowrap">
-              <button class="ann-action px-3 py-1 rounded-lg border border-gold-500/40 text-gold-200 hover:bg-gold-500/10 transition" data-id="${it.id}" data-action="edit">Edit</button>
-              <button class="ann-action px-3 py-1 rounded-lg border border-red-500/40 text-red-200 hover:bg-red-500/10 transition ml-2" data-id="${it.id}" data-action="delete">Hapus</button>
+            <div class="shrink-0 flex gap-1.5">
+              <button class="ann-action px-2.5 py-1 text-[11px] font-medium rounded-lg border border-gold-500/30 text-gold-200 hover:bg-gold-500/10 hover:border-gold-500/50 transition-all" data-id="${it.id}" data-action="edit">Edit</button>
+              <button class="ann-action px-2.5 py-1 text-[11px] font-medium rounded-lg border border-red-500/30 text-red-200 hover:bg-red-500/10 hover:border-red-500/50 transition-all" data-id="${it.id}" data-action="delete">Hapus</button>
             </div>
           </div>
         `);
       });
-
-      // Add checkbox event listeners
-      document.querySelectorAll('.ann-checkbox').forEach(cb => {
-        cb.addEventListener('change', updateAnnBulkActions);
-      });
-      updateAnnBulkActions();
     }
-
-    function updateAnnBulkActions() {
-      const selected = document.querySelectorAll('.ann-checkbox:checked');
-      const actionsDiv = document.getElementById('ann-bulk-actions');
-      const countEl = document.getElementById('ann-selected-count');
-      
-      if (!actionsDiv || !countEl) return;
-
-      if (selected.length > 0) {
-        actionsDiv.classList.remove('hidden');
-        countEl.textContent = `${selected.length} terpilih`;
-      } else {
-        actionsDiv.classList.add('hidden');
-      }
-    }
-
-    document.getElementById('ann-bulk-delete-btn')?.addEventListener('click', async () => {
-      const selected = document.querySelectorAll('.ann-checkbox:checked');
-      if (selected.length === 0) return;
-
-      const confirmed = await showConfirmationModal({
-        title: `Hapus ${selected.length} Pengumuman?`,
-        body: `Anda yakin ingin menghapus ${selected.length} pengumuman terpilih sekaligus? Tindakan ini tidak dapat dibatalkan.`
-      });
-
-      if (!confirmed) return;
-
-      showToast(`Menghapus ${selected.length} data...`, 'info');
-      
-      try {
-        for (const cb of selected) {
-          const id = cb.dataset.id;
-          await window.dataSdk?.remove?.('announcements', id);
-        }
-        showToast('Pengumuman terpilih berhasil dihapus.', 'success');
-        renderAnnouncementsAdmin();
-      } catch (err) {
-        console.error('Bulk delete error:', err);
-        showToast('Terjadi kesalahan saat menghapus beberapa data.', 'error');
-      }
-    });
 
     function downloadJson(filename, obj) {
       const blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json' });
@@ -2212,17 +2056,13 @@
         const scheduleEntry = (schedules || []).find(it => it.studentId === s.id && it.graduationStatus === 'Lulus');
         const displayJuz = scheduleEntry?.juz || s.juz || '-';
 
-      tbody.insertAdjacentHTML('beforeend', `
+        tbody.insertAdjacentHTML('beforeend', `
           <tr class="hover:bg-emerald-800/10 transition-colors">
             <td class="px-4 py-3 text-white font-medium">${s.name}</td>
             <td class="px-4 py-3 text-emerald-200/80 text-sm">${s.class} / ${displayJuz}</td>
-            <td class="px-4 py-3 text-emerald-400/70 text-xs italic">${s.period || '-'}</td>
             <td class="px-4 py-3">${certPreview}</td>
             <td class="px-4 py-3 text-right">
               <div class="flex items-center justify-end gap-2">
-                <button class="student-action p-2 rounded-lg bg-emerald-800/50 text-emerald-200 hover:bg-emerald-700 transition" data-id="${s.id}" data-action="edit" title="Edit">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                </button>
                 <button class="cert-action px-3 py-1 rounded-lg border border-gold-500/40 text-gold-200 hover:bg-gold-500/10 transition disabled:opacity-50" 
                   data-id="${s.id}" data-action="link" title="Input Link Google Drive">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
@@ -2716,7 +2556,6 @@
       const studentClass = (document.getElementById('student-class')?.value || '').trim();
       const juz = (document.getElementById('student-juz')?.value || '').trim();
       const period = (document.getElementById('student-period')?.value || '').trim();
-      const examDate = (document.getElementById('student-exam-date')?.value || '').trim();
       const notes = (document.getElementById('student-notes')?.value || '').trim();
       if (!name) return;
       
@@ -2771,7 +2610,6 @@
           class: studentClass, 
           juz, 
           period,
-          examDate,
           notes,
           photo: photoUrl,
           updated_at: new Date().toISOString()
@@ -3620,7 +3458,6 @@
         applyHomepageSettings();
         applyRegistrationSettings();
         renderPublicSchedule();
-        renderGraduationBoard();
         renderPublicAnnouncements();
       } catch (err) {
         console.error('Initialization error:', err);
@@ -3638,17 +3475,6 @@
         }
       } else {
         navigateTo(isElectron ? 'login-operator' : 'beranda');
-      }
-
-      // Hide loading screen after everything is initialized
-      const loadingScreen = document.getElementById('loading-screen');
-      if (loadingScreen) {
-        setTimeout(() => {
-          loadingScreen.classList.add('fade-out');
-          setTimeout(() => {
-            loadingScreen.remove();
-          }, 700); // match duration-700
-        }, 800); // give a little extra time for smooth feeling
       }
     });
 
