@@ -1,16 +1,10 @@
 {
   "name": "portal-operator-tasmi",
   "version": "1.0.0",
-  "description": "Aplikasi Khusus Operator Tasmi Al-Quran",
-  "main": "electron-main.js",
+  "description": "Website Portal Operator Tasmi Al-Quran",
   "scripts": {
-    "start": "electron .",
-    "build": "electron-packager . \"Portal Operator Tasmi\" --platform=win32 --arch=x64 --out=dist --overwrite"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "SDIT Al-Hilmi",
-  "license": "ISC",
-  "devDependencies": {
-    "electron": "^30.0.0",
-    "electron-packager": "^17.1.2"
-  }
+  "license": "ISC"
 }
