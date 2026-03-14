@@ -141,7 +141,7 @@
         // Check if student has ANY schedule
         const hasSchedule = (schedules || []).some(s => s.studentId === student.id);
         if (!hasSchedule) {
-          await autoCreateSchedule(student.id, student.name, student.juz || '-', student.period || '');
+          // autoCreateSchedule call removed
           createdCount++;
         }
       }
@@ -754,6 +754,8 @@
       const juzEl = document.getElementById('grad-modal-juz');
       const dateEl = document.getElementById('grad-modal-date');
       const motivationEl = document.getElementById('grad-modal-motivation');
+      const fatherEl = document.getElementById('grad-modal-father');
+      const motherEl = document.getElementById('grad-modal-mother');
       const iconWrap = document.getElementById('grad-modal-icon');
       const svgEl = document.getElementById('grad-modal-svg');
       const certContainer = document.getElementById('grad-modal-cert-container');
@@ -769,11 +771,15 @@
       dateEl.textContent = formatDateId(ann.date);
       motivationEl.textContent = res.motivation || (isPassed ? "Barakallahu fiikum! Teruslah menjaga hafalanmu." : "Jangan menyerah! Setiap ayat yang dihafal adalah pahala yang besar.");
       
+      // Profile Photo in Modal
+      const student = (students || []).find(s => s.id === res.studentId);
+      
+      if (fatherEl) fatherEl.textContent = student?.fatherName || '-';
+      if (motherEl) motherEl.textContent = student?.motherName || '-';
+
       // Icons
       iconWrap.className = `w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 border-2 ${isPassed ? 'bg-emerald-500/10 border-emerald-500/50' : 'bg-red-500/10 border-red-500/50'}`;
       
-      // Profile Photo in Modal
-      const student = (students || []).find(s => s.id === res.studentId);
       const profileImgContainer = document.getElementById('grad-modal-profile-img-container');
       const profileImg = document.getElementById('grad-modal-profile-img');
       
@@ -1401,6 +1407,8 @@
       });
     }
 
+    let studentPhotoRemoved = false;
+
     function openStudentModal(id = null) {
       const modal = document.getElementById('student-modal');
       const dialog = document.getElementById('student-modal-dialog');
@@ -1410,12 +1418,15 @@
       const photoInput = document.getElementById('student-photo-input');
       const photoPreviewImg = document.getElementById('student-photo-preview-img');
       const photoPlaceholder = document.getElementById('student-photo-placeholder');
+      const photoDeleteBtn = document.getElementById('student-photo-delete-btn');
 
       form.reset();
+      studentPhotoRemoved = false;
       if (photoInput) photoInput.value = '';
       photoPreviewImg.src = '';
       photoPreviewImg.classList.add('hidden');
       photoPlaceholder.classList.remove('hidden');
+      if (photoDeleteBtn) photoDeleteBtn.classList.add('hidden');
 
       if (id) {
         const student = students.find(s => s.id === id);
@@ -1426,12 +1437,15 @@
           document.getElementById('student-class').value = student.class || '';
           document.getElementById('student-juz').value = student.juz || '';
           document.getElementById('student-period').value = student.period || '';
+          document.getElementById('student-father').value = student.fatherName || '';
+          document.getElementById('student-mother').value = student.motherName || '';
           document.getElementById('student-notes').value = student.notes || '';
           
           if (student.photo) {
             photoPreviewImg.src = student.photo;
             photoPreviewImg.classList.remove('hidden');
             photoPlaceholder.classList.add('hidden');
+            if (photoDeleteBtn) photoDeleteBtn.classList.remove('hidden');
           }
         }
       } else {
@@ -2252,7 +2266,8 @@
         kelas: document.getElementById('kelas').value,
         jenis_kelamin: document.getElementById('jenis_kelamin').value,
         juz_tasmikan: document.getElementById('juz_tasmikan').value,
-        nama_orang_tua: document.getElementById('nama_orang_tua').value,
+        fatherName: document.getElementById('nama_ayah').value,
+        motherName: document.getElementById('nama_ibu').value,
         status: 'Menunggu Verifikasi',
         lembar_tasmi: photoBase64,
         created_at: new Date().toISOString()
@@ -3067,8 +3082,28 @@
         const registration = registrations.find(r => r.id === id);
         if (registration) {
           const studentList = students || [];
-          const existingStudent = studentList.find(s => s.registrationId === id);
-          if (!existingStudent) {
+          // Cari siswa berdasarkan nama lengkap (dan kelas jika ingin lebih spesifik)
+          const existingStudent = studentList.find(s => 
+            (s.name || '').toLowerCase() === (registration.nama_lengkap || '').toLowerCase()
+          );
+
+          if (existingStudent) {
+            // Update data siswa lama (Menimpa file lama)
+            await window.dataSdk?.update?.('students', existingStudent.id, {
+              registrationId: id,
+              class: registration.kelas,
+              gender: registration.jenis_kelamin,
+              juz: registration.juz_tasmikan,
+              fatherName: registration.fatherName,
+              motherName: registration.motherName,
+              lembar_tasmi: registration.lembar_tasmi || registration.photo,
+              graduationStatus: 'Menunggu', // Reset status kelulusan
+              updated_at: new Date().toISOString()
+            });
+            
+            showToast('Data siswa lama diperbarui (Pendaftaran Ulang disetujui).', 'success');
+          } else {
+            // Buat data siswa baru
             const newStudentId = 'SIS-' + Date.now();
             await window.dataSdk?.create?.('students', {
               id: newStudentId,
@@ -3077,14 +3112,14 @@
               class: registration.kelas,
               gender: registration.jenis_kelamin,
               juz: registration.juz_tasmikan,
-              parentName: registration.nama_orang_tua,
+              fatherName: registration.fatherName,
+              motherName: registration.motherName,
               lembar_tasmi: registration.lembar_tasmi || registration.photo,
+              graduationStatus: 'Menunggu',
               created_at: new Date().toISOString()
             });
             
-            // Auto-create schedule for graduation management
-            await autoCreateSchedule(newStudentId, registration.nama_lengkap, registration.juz_tasmikan, registration.period || '');
-            showToast('Siswa ditambahkan ke Data Siswa & Kelulusan.', 'success');
+            showToast('Siswa baru berhasil ditambahkan.', 'success');
           }
         }
         await window.dataSdk?.update?.('registrations', id, { status: 'Disetujui' });
@@ -3113,6 +3148,8 @@
       const studentClass = (document.getElementById('student-class')?.value || '').trim();
       const juz = (document.getElementById('student-juz')?.value || '').trim();
       const period = (document.getElementById('student-period')?.value || '').trim();
+      const fatherName = (document.getElementById('student-father')?.value || '').trim();
+      const motherName = (document.getElementById('student-mother')?.value || '').trim();
       const notes = (document.getElementById('student-notes')?.value || '').trim();
       if (!name) return;
       
@@ -3156,9 +3193,14 @@
             photoUrl = compressedBase64;
           }
         } else if (id) {
-          // Keep existing photo if not uploading new one
-          const existing = students.find(s => s.id === id);
-          photoUrl = existing?.photo || null;
+          // Check if photo was explicitly removed
+          if (studentPhotoRemoved) {
+            photoUrl = null;
+          } else {
+            // Keep existing photo if not uploading new one and not removed
+            const existing = students.find(s => s.id === id);
+            photoUrl = existing?.photo || null;
+          }
         }
 
         const studentData = { 
@@ -3167,6 +3209,8 @@
           class: studentClass, 
           juz, 
           period,
+          fatherName,
+          motherName,
           notes,
           photo: photoUrl,
           updated_at: new Date().toISOString()
@@ -3177,8 +3221,6 @@
         } else {
           studentData.created_at = new Date().toISOString();
           await window.dataSdk?.create?.('students', studentData);
-          // Auto-create schedule for graduation management
-          await autoCreateSchedule(finalId, name, juz);
         }
 
         showToast('Data siswa berhasil disimpan.', 'success');
@@ -3215,13 +3257,32 @@
       reader.onload = (event) => {
         const previewImg = document.getElementById('student-photo-preview-img');
         const placeholder = document.getElementById('student-photo-placeholder');
+        const deleteBtn = document.getElementById('student-photo-delete-btn');
         if (previewImg && placeholder) {
           previewImg.src = event.target.result;
           previewImg.classList.remove('hidden');
           placeholder.classList.add('hidden');
+          studentPhotoRemoved = false;
+          if (deleteBtn) deleteBtn.classList.remove('hidden');
         }
       };
       reader.readAsDataURL(file);
+    });
+
+    document.getElementById('student-photo-delete-btn')?.addEventListener('click', () => {
+      const photoInput = document.getElementById('student-photo-input');
+      const previewImg = document.getElementById('student-photo-preview-img');
+      const placeholder = document.getElementById('student-photo-placeholder');
+      const deleteBtn = document.getElementById('student-photo-delete-btn');
+
+      if (photoInput) photoInput.value = '';
+      if (previewImg) {
+        previewImg.src = '';
+        previewImg.classList.add('hidden');
+      }
+      if (placeholder) placeholder.classList.remove('hidden');
+      if (deleteBtn) deleteBtn.classList.add('hidden');
+      studentPhotoRemoved = true;
     });
 
     document.getElementById('student-reset')?.addEventListener('click', () => {
