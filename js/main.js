@@ -822,10 +822,13 @@
 
     function renderGraduationBoard() {
       const tbody = document.getElementById('graduation-announcement-table');
+      const searchInput = document.getElementById('grad-search-input');
       if (!tbody) return;
 
+      const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
       // Ambil data kelulusan dari koleksi announcements (Hasil Resmi)
-      const allResults = [];
+      let allResults = [];
       (announcements || []).forEach(ann => {
         if (ann.studentResults && Array.isArray(ann.studentResults)) {
           ann.studentResults.forEach(res => {
@@ -839,6 +842,13 @@
         }
       });
 
+      // Filter berdasarkan pencarian nama
+      if (searchTerm) {
+        allResults = allResults.filter(res => 
+          res.studentName.toLowerCase().includes(searchTerm)
+        );
+      }
+
       // Urutkan berdasarkan tanggal terbaru
       allResults.sort((a, b) => String(b.annDate || '').localeCompare(String(a.annDate || '')));
 
@@ -846,7 +856,7 @@
         tbody.innerHTML = `
           <tr>
             <td colspan="3" class="px-6 py-10 text-center text-emerald-200/50 italic">
-              Belum ada pengumuman kelulusan terbaru.
+              ${searchTerm ? `Tidak ditemukan siswa dengan nama "${searchTerm}"` : 'Belum ada pengumuman kelulusan terbaru.'}
             </td>
           </tr>`;
         return;
@@ -884,6 +894,13 @@
         `;
       }).join('');
     }
+
+    // Set up search event listener
+    document.addEventListener('input', (e) => {
+      if (e.target.id === 'grad-search-input') {
+        renderGraduationBoard();
+      }
+    });
 
     function renderPublicAnnouncements() {
       const container = document.getElementById('public-announcements-container');
