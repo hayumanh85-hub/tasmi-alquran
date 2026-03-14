@@ -908,72 +908,37 @@
       items
         .slice()
         .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')))
+        .filter(it => !(it.studentResults && Array.isArray(it.studentResults) && it.studentResults.length > 0)) // Filter out graduation announcements
         .forEach(it => {
-          const isGraduation = it.studentResults && Array.isArray(it.studentResults) && it.studentResults.length > 0;
-
-          if (isGraduation) {
-            // Graduation Announcement: Table Style
-            const tableRows = it.studentResults.map((res, idx) => `
-              <tr class="hover:bg-emerald-800/20 transition-colors group cursor-pointer" onclick="openGraduationDetailModal('${res.studentId}', '${it.id}')">
-                <td class="px-4 py-3">
-                  <div class="flex items-center gap-3">
-                    <div class="w-1.5 h-1.5 rounded-full ${res.status === 'Lulus' ? 'bg-emerald-400' : 'bg-red-400'}"></div>
-                    <span class="text-white text-sm font-medium group-hover:text-gold-400 transition-colors">${res.studentName}</span>
+          // Regular Info Announcement: Direct Box Style
+          container.insertAdjacentHTML('beforeend', `
+            <div class="card-shine bg-emerald-800/30 backdrop-blur-sm rounded-2xl p-6 border border-emerald-700/40 hover:border-gold-500/30 transition-all mb-6">
+              <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-emerald-950/50 flex items-center justify-center text-gold-400">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                   </div>
-                </td>
-                <td class="px-4 py-3 text-right">
-                  <svg class="w-4 h-4 text-emerald-500/30 group-hover:text-gold-500 transition-colors inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                </td>
-              </tr>
-            `).join('');
-
-            container.insertAdjacentHTML('beforeend', `
-              <div class="card-shine bg-emerald-800/30 backdrop-blur-sm rounded-2xl border border-gold-500/20 overflow-hidden mb-6">
-                <div class="p-5 border-b border-emerald-700/30 bg-emerald-950/20 flex items-center justify-between">
                   <div>
-                    <h3 class="text-sm font-bold text-white">${it.title || 'Hasil Tasmi'}</h3>
-                    <p class="text-[10px] text-emerald-500/60 mt-0.5">${formatDateId(it.date)}</p>
+                    <h3 class="text-base font-bold text-white">${it.title || '-'}</h3>
+                    <p class="text-[10px] text-emerald-500/60">${formatDateId(it.date)}</p>
                   </div>
-                  <span class="px-2 py-0.5 rounded-full text-[10px] font-medium ${tagClass(it.tag)}">${it.tag || 'Hasil'}</span>
                 </div>
-                <div class="overflow-hidden">
-                  <table class="w-full text-left">
-                    <thead class="bg-emerald-900/40 text-[10px] uppercase tracking-wider text-emerald-400">
-                      <tr>
-                        <th class="px-4 py-2 font-semibold">Nama Siswa</th>
-                        <th class="px-4 py-2 text-right">Detail</th>
-                      </tr>
-                    </thead>
-                    <tbody class="divide-y divide-emerald-700/20">
-                      ${tableRows}
-                    </tbody>
-                  </table>
-                </div>
+                <span class="px-2 py-1 rounded-full text-[10px] font-medium ${tagClass(it.tag)}">${it.tag || 'Info'}</span>
               </div>
-            `);
-          } else {
-            // Regular Info Announcement: Direct Box Style
-            container.insertAdjacentHTML('beforeend', `
-              <div class="card-shine bg-emerald-800/30 backdrop-blur-sm rounded-2xl p-6 border border-emerald-700/40 hover:border-gold-500/30 transition-all mb-6">
-                <div class="flex items-center justify-between mb-4">
-                  <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-emerald-950/50 flex items-center justify-center text-gold-400">
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    </div>
-                    <div>
-                      <h3 class="text-base font-bold text-white">${it.title || '-'}</h3>
-                      <p class="text-[10px] text-emerald-500/60">${formatDateId(it.date)}</p>
-                    </div>
-                  </div>
-                  <span class="px-2 py-1 rounded-full text-[10px] font-medium ${tagClass(it.tag)}">${it.tag || 'Info'}</span>
-                </div>
-                <div class="text-emerald-200/80 text-sm leading-relaxed whitespace-pre-line">
-                  ${it.body || ''}
-                </div>
+              <div class="text-emerald-200/80 text-sm leading-relaxed whitespace-pre-line">
+                ${it.body || ''}
               </div>
-            `);
-          }
+            </div>
+          `);
         });
+
+      // Show empty message if all announcements were filtered out
+      if (container.innerHTML === '') {
+        container.innerHTML = `
+          <div class="text-center py-10 card-shine bg-emerald-800/30 rounded-2xl border border-gold-500/20">
+            <p class="text-emerald-200/70">Belum ada pengumuman terbaru.</p>
+          </div>`;
+      }
     }
 
     function viewCertificatePublic(studentId, studentName) {
