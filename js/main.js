@@ -612,7 +612,7 @@
 
       // Role-based visibility
       if (role === 'pentasmi') {
-        const allowed = ['graduation', 'schedule', 'certificates'];
+        const allowed = ['graduation', 'schedule', 'certificates', 'pentasmi-history', 'pentasmi-password'];
         document.querySelectorAll('.operator-nav-btn').forEach(btn => {
           if (!allowed.includes(btn.dataset.tab)) btn.classList.add('hidden');
           else btn.classList.remove('hidden');
@@ -621,7 +621,11 @@
         const annBtn = document.getElementById('announce-graduation-btn');
         if (annBtn) annBtn.classList.add('hidden');
       } else {
-        document.querySelectorAll('.operator-nav-btn').forEach(btn => btn.classList.remove('hidden'));
+        // Operator can see everything except pentasmi-only tabs if any (currently operator sees all)
+        document.querySelectorAll('.operator-nav-btn').forEach(btn => {
+          if (['pentasmi-history', 'pentasmi-password'].includes(btn.dataset.tab)) btn.classList.add('hidden');
+          else btn.classList.remove('hidden');
+        });
         const annBtn = document.getElementById('announce-graduation-btn');
         if (annBtn) annBtn.classList.remove('hidden');
       }
@@ -1213,11 +1217,24 @@
       const tbody = document.getElementById('approval-table');
       if (!tbody) return;
       const filter = document.getElementById('approval-filter')?.value || 'ALL';
+      const searchInput = document.getElementById('approval-search');
+      const searchTerm = (searchInput?.value || '').toLowerCase().trim();
 
-      const data = registrations || [];
+      let data = (registrations || []).slice();
+
+      if (filter !== 'ALL') {
+        data = data.filter(r => r.status === filter);
+      }
+
+      if (searchTerm) {
+        data = data.filter(r => 
+          (r.nama_lengkap || '').toLowerCase().includes(searchTerm) ||
+          (r.kelas || '').toLowerCase().includes(searchTerm) ||
+          (r.juz_tasmikan || '').toLowerCase().includes(searchTerm)
+        );
+      }
+
       const rows = data
-        .filter(r => filter === 'ALL' ? true : r.status === filter)
-        .slice()
         .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')))
         .map(r => {
           const safe = (v) => (v ?? '').toString();
@@ -1282,6 +1299,92 @@
       });
     }
 
+    function renderPentasmiHistory() {
+      requireOperator();
+      const role = getLoggedInRole();
+      if (role !== 'pentasmi') return;
+      const user = lsGet(STORAGE_KEYS.operatorAuth);
+      const pentasmiId = user?.id;
+      const tbody = document.getElementById('pentasmi-history-table');
+      if (!tbody) return;
+
+      // Filter history: completed schedules for this pentasmi
+      const list = (schedules || [])
+        .filter(it => it.teacherId === pentasmiId && it.graduationStatus)
+        .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+
+      tbody.innerHTML = '';
+      if (list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="px-4 py-6 text-center text-emerald-200/50">Belum ada history tasmi.</td></tr>';
+        return;
+      }
+
+      list.forEach(it => {
+        const student = (students || []).find(s => s.id === it.studentId);
+        const statusPill = (st) => {
+          if (st === 'Lulus') return '<span class="px-2 py-1 rounded-full text-[10px] bg-green-500/20 text-green-300">Lulus</span>';
+          return '<span class="px-2 py-1 rounded-full text-[10px] bg-red-500/20 text-red-300">Tidak Lulus</span>';
+        };
+
+        tbody.insertAdjacentHTML('beforeend', `
+          <tr class="hover:bg-emerald-800/10 transition-colors">
+            <td class="px-4 py-3 text-emerald-200/70 font-mono text-xs">${formatDateId(it.date)}</td>
+            <td class="px-4 py-3 text-white font-medium">${student?.name || '-'}</td>
+            <td class="px-4 py-3 text-emerald-200/60 text-xs">Kl: ${student?.class || '-'}<br>Juz: ${student?.juz || '-'}</td>
+            <td class="px-4 py-3">${statusPill(it.graduationStatus)}</td>
+          </tr>
+        `);
+      });
+    }
+
+    function renderMonitoringHistory() {
+      requireOperator();
+      const role = getLoggedInRole();
+      if (role !== 'operator') return;
+      const tbody = document.getElementById('monitoring-history-table');
+      const filterSelect = document.getElementById('monitoring-pentasmi-filter');
+      if (!tbody || !filterSelect) return;
+
+      // Update pentasmi filter options
+      const currentFilter = filterSelect.value;
+      const pentasmiList = pentasmiGetAll();
+      filterSelect.innerHTML = '<option value="all">Semua Pentasmi</option>' + 
+        pentasmiList.map(p => `<option value="${p.id}" ${p.id === currentFilter ? 'selected' : ''}>${p.name}</option>`).join('');
+
+      let list = (schedules || [])
+        .filter(it => it.graduationStatus)
+        .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+
+      if (currentFilter !== 'all') {
+        list = list.filter(it => it.teacherId === currentFilter);
+      }
+
+      tbody.innerHTML = '';
+      if (list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-6 text-center text-emerald-200/50">Tidak ada history tasmi untuk ditampilkan.</td></tr>';
+        return;
+      }
+
+      list.forEach(it => {
+        const student = (students || []).find(s => s.id === it.studentId);
+        const pentasmi = (pentasmiAccounts || []).find(p => p.id === it.teacherId);
+        const statusPill = (st) => {
+          if (st === 'Lulus') return '<span class="px-2 py-1 rounded-full text-[10px] bg-green-500/20 text-green-300">Lulus</span>';
+          return '<span class="px-2 py-1 rounded-full text-[10px] bg-red-500/20 text-red-300">Tidak Lulus</span>';
+        };
+
+        tbody.insertAdjacentHTML('beforeend', `
+          <tr class="hover:bg-emerald-800/10 transition-colors">
+            <td class="px-4 py-3 text-gold-400 font-medium">${pentasmi?.name || '-'}</td>
+            <td class="px-4 py-3 text-emerald-200/70 font-mono text-xs">${formatDateId(it.date)}</td>
+            <td class="px-4 py-3 text-white font-medium">${student?.name || '-'}</td>
+            <td class="px-4 py-3 text-emerald-200/60 text-xs">Kl: ${student?.class || '-'}<br>Juz: ${student?.juz || '-'}</td>
+            <td class="px-4 py-3">${statusPill(it.graduationStatus)}</td>
+          </tr>
+        `);
+      });
+    }
+
     function openStudentModal(id = null) {
       const modal = document.getElementById('student-modal');
       const dialog = document.getElementById('student-modal-dialog');
@@ -1341,6 +1444,7 @@
       const emptyEl = document.getElementById('students-empty');
       const entriesSelect = document.getElementById('students-entries');
       const periodFilter = document.getElementById('students-period-filter');
+      const searchInput = document.getElementById('students-search');
       if (!tbody) return;
 
       // Update period filter options
@@ -1353,11 +1457,20 @@
 
       const limit = parseInt(entriesSelect?.value || '10');
       const selectedPeriod = periodFilter?.value || 'all';
+      const searchTerm = (searchInput?.value || '').toLowerCase().trim();
 
       let list = (students || []).slice();
       
       if (selectedPeriod !== 'all') {
         list = list.filter(s => s.period === selectedPeriod);
+      }
+
+      if (searchTerm) {
+        list = list.filter(s => 
+          (s.name || '').toLowerCase().includes(searchTerm) ||
+          (s.class || '').toLowerCase().includes(searchTerm) ||
+          (s.juz || '').toLowerCase().includes(searchTerm)
+        );
       }
 
       list = list.sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')))
@@ -1441,6 +1554,8 @@
       const wrap = document.getElementById('schedule-list');
       if (!wrap) return;
       const role = getLoggedInRole();
+      const searchInput = document.getElementById('schedule-search');
+      const searchTerm = (searchInput?.value || '').toLowerCase().trim();
 
       // Hide form for pentasmi
       const form = document.getElementById('schedule-form');
@@ -1468,14 +1583,24 @@
       }
 
       // Filter schedules to only show students who have NOT graduated
-      const list = (schedules || []).filter(it => {
+      let list = (schedules || []).filter(it => {
         const student = (students || []).find(s => s.id === it.studentId);
         return student && student.graduationStatus !== 'Lulus';
       });
+
+      if (searchTerm) {
+        list = list.filter(it => {
+          const student = (students || []).find(s => s.id === it.studentId);
+          const teacher = (pentasmiAccounts || []).find(p => p.id === it.teacherId);
+          return (student?.name || '').toLowerCase().includes(searchTerm) ||
+                 (teacher?.name || '').toLowerCase().includes(searchTerm) ||
+                 (it.location || '').toLowerCase().includes(searchTerm);
+        });
+      }
       
       wrap.innerHTML = '';
       if (list.length === 0) {
-        wrap.innerHTML = `<div class="text-emerald-200/70 text-sm">Belum ada jadwal. Tambahkan dari form di atas.</div>`;
+        wrap.innerHTML = `<div class="text-emerald-200/70 text-sm">${searchTerm ? 'Tidak ada jadwal yang cocok.' : 'Belum ada jadwal. Tambahkan dari form di atas.'}</div>`;
         return;
       }
       list.forEach(it => {
@@ -2134,6 +2259,8 @@
         if (tab === 'congratulations') renderCongratulationsTable();
         if (tab === 'homepage') loadHomepageSettingsIntoForm();
         if (tab === 'registration-settings') loadRegistrationSettingsIntoForm();
+        if (tab === 'pentasmi-history') renderPentasmiHistory();
+        if (tab === 'operator-monitoring') renderMonitoringHistory();
       });
     });
 
@@ -2828,6 +2955,7 @@
 
     document.getElementById('approval-refresh')?.addEventListener('click', () => renderApprovalTable());
     document.getElementById('approval-filter')?.addEventListener('change', () => renderApprovalTable());
+    document.getElementById('approval-search')?.addEventListener('input', () => renderApprovalTable());
 
     document.getElementById('approval-table')?.addEventListener('click', async (e) => {
       const btn = e.target.closest('.approval-action');
@@ -2978,6 +3106,7 @@
     document.getElementById('student-modal-cancel')?.addEventListener('click', () => closeStudentModal());
     document.getElementById('students-entries')?.addEventListener('change', () => renderStudents());
     document.getElementById('students-period-filter')?.addEventListener('change', () => renderStudents());
+    document.getElementById('students-search')?.addEventListener('input', () => renderStudents());
 
     // Student photo preview logic
     document.getElementById('student-photo-input')?.addEventListener('change', (e) => {
@@ -3245,6 +3374,7 @@
       const idEl = document.getElementById('schedule-id');
       if (idEl) idEl.value = '';
     });
+    document.getElementById('schedule-search')?.addEventListener('input', () => renderScheduleAdmin());
 
     document.getElementById('schedule-list')?.addEventListener('click', async (e) => {
       const btn = e.target.closest('.schedule-action');
@@ -3304,6 +3434,44 @@
       if (idEl) idEl.value = '';
       renderAnnouncementsAdmin();
       renderPublicAnnouncements();
+    });
+
+    document.getElementById('monitoring-pentasmi-filter')?.addEventListener('change', () => renderMonitoringHistory());
+    document.getElementById('monitoring-refresh')?.addEventListener('click', () => renderMonitoringHistory());
+
+    document.getElementById('pentasmi-change-password-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const oldPass = document.getElementById('pentasmi-old-pass').value;
+      const newPass = document.getElementById('pentasmi-new-pass').value;
+      const confirmPass = document.getElementById('pentasmi-confirm-pass').value;
+
+      if (newPass.length < 6) {
+        showToast('Password baru minimal 6 karakter.', 'error');
+        return;
+      }
+      if (newPass !== confirmPass) {
+        showToast('Konfirmasi password tidak cocok.', 'error');
+        return;
+      }
+
+      const user = lsGet(STORAGE_KEYS.operatorAuth);
+      if (!user || user.role !== 'pentasmi') return;
+
+      const acc = (pentasmiAccounts || []).find(p => p.id === user.id);
+      if (!acc || acc.password !== oldPass) {
+        showToast('Password lama salah.', 'error');
+        return;
+      }
+
+      try {
+        await window.dataSdk?.update?.('pentasmi', acc.id, { password: newPass });
+        // Update local memory too if needed, but SDK update should trigger sync
+        showToast('Password berhasil diperbarui!', 'success');
+        e.target.reset();
+      } catch (err) {
+        console.error('Password change error:', err);
+        showToast('Gagal mengganti password.', 'error');
+      }
     });
 
     document.getElementById('ann-reset')?.addEventListener('click', () => {

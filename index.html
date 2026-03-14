@@ -274,6 +274,9 @@
            <button class="operator-nav-btn w-full text-left px-4 py-3 rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-100 hover:border-gold-500/40 transition" data-tab="students">Data Siswa</button>
            <button class="operator-nav-btn w-full text-left px-4 py-3 rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-100 hover:border-gold-500/40 transition" data-tab="schedule">Kelola Jadwal</button>
            <button class="operator-nav-btn w-full text-left px-4 py-3 rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-100 hover:border-gold-500/40 transition" data-tab="graduation">Penentuan Kelulusan Tasmi</button>
+           <button class="operator-nav-btn w-full text-left px-4 py-3 rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-100 hover:border-gold-500/40 transition" data-tab="pentasmi-history">History Tasmi Saya</button>
+           <button class="operator-nav-btn w-full text-left px-4 py-3 rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-100 hover:border-gold-500/40 transition" data-tab="pentasmi-password">Ganti Password Saya</button>
+           <button class="operator-nav-btn w-full text-left px-4 py-3 rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-100 hover:border-gold-500/40 transition" data-tab="operator-monitoring">Monitoring Pentasmi</button>
            <button class="operator-nav-btn w-full text-left px-4 py-3 rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-100 hover:border-gold-500/40 transition" data-tab="pentasmi">Kelola Akun Pentasmi</button>
            <button class="operator-nav-btn w-full text-left px-4 py-3 rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-100 hover:border-gold-500/40 transition" data-tab="announcements">Kelola Pengumuman</button>
            <button class="operator-nav-btn w-full text-left px-4 py-3 rounded-xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-100 hover:border-gold-500/40 transition" data-tab="certificates">Upload Sertifikat</button>
@@ -282,7 +285,7 @@
           </nav>
          </aside>
 
-         <div class="p-6 md:p-8 min-w-0">
+         <div class="p-6 md:p-8 min-w-0 h-[calc(100vh-200px)] overflow-y-auto custom-scrollbar">
           <div id="operator-tab-registration-settings" class="operator-tab hidden">
            <h3 class="text-xl font-bold text-white mb-2">Pengaturan Pendaftaran</h3>
            <p class="text-emerald-200/70 text-sm mb-6">Kelola status aktif/nonaktif formulir pendaftaran.</p>
@@ -462,7 +465,11 @@
              <h3 class="text-xl font-bold text-white">Persetujuan Pendaftaran</h3>
              <p class="text-emerald-200/70 text-sm mt-1">Setujui / tolak pendaftaran dan ubah statusnya.</p>
             </div>
-            <div class="flex gap-3">
+            <div class="flex flex-wrap items-center gap-3">
+             <div class="relative w-full md:w-64">
+              <input type="text" id="approval-search" class="w-full pl-10 pr-4 py-2 bg-emerald-900/40 border border-emerald-700/50 rounded-xl text-white placeholder-emerald-500/70 focus:border-gold-500 focus:outline-none text-xs" placeholder="Cari nama pendaftar...">
+              <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500/60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+             </div>
              <select id="approval-filter" class="input-field px-4 py-2 bg-emerald-900/50 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none">
               <option value="ALL">Semua</option>
               <option value="Menunggu Verifikasi">Menunggu Verifikasi</option>
@@ -472,7 +479,7 @@
              <button id="approval-refresh" class="px-4 py-2 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 text-emerald-950 font-semibold hover:from-gold-400 hover:to-gold-500 transition">Refresh</button>
             </div>
            </div>
-           <div class="overflow-auto rounded-xl border border-emerald-700/50">
+           <div class="overflow-auto max-h-[600px] custom-scrollbar rounded-xl border border-emerald-700/50">
             <table class="min-w-full text-sm">
              <thead class="bg-emerald-950/40 text-emerald-200">
               <tr>
@@ -495,6 +502,10 @@
              <p class="text-emerald-200/70 text-sm mt-1">Lihat, ubah, dan hapus data siswa yang telah disetujui.</p>
             </div>
             <div class="flex flex-wrap items-center gap-3">
+             <div class="relative w-full md:w-64">
+              <input type="text" id="students-search" class="w-full pl-10 pr-4 py-2 bg-emerald-900/40 border border-emerald-700/50 rounded-xl text-white placeholder-emerald-500/70 focus:border-gold-500 focus:outline-none text-xs" placeholder="Cari nama siswa...">
+              <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500/60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+             </div>
              <div class="flex items-center gap-2 bg-emerald-900/40 border border-emerald-700/50 rounded-xl px-3 py-2">
               <span class="text-emerald-300 text-xs font-medium">Periode:</span>
               <select id="students-period-filter" class="bg-transparent text-white text-xs focus:outline-none cursor-pointer">
@@ -521,7 +532,7 @@
            </div>
 
            <div class="card-shine bg-emerald-900/30 rounded-2xl border border-emerald-700/40 overflow-hidden">
-            <div class="overflow-auto">
+            <div class="overflow-auto max-h-[600px] custom-scrollbar">
              <table class="min-w-full text-sm">
               <thead class="bg-emerald-950/40 text-emerald-200">
                <tr>
@@ -579,7 +590,16 @@
              <button type="button" id="schedule-reset" class="px-5 py-3 rounded-xl border border-emerald-700/60 text-emerald-100 hover:border-gold-500/40 transition">Reset</button>
             </div>
            </form>
-           <div id="schedule-list" class="space-y-3"></div>
+           
+           <div class="flex items-center gap-3 mb-4">
+            <div class="relative flex-1 max-w-xs">
+             <input type="text" id="schedule-search" class="w-full pl-10 pr-4 py-2 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white placeholder-emerald-500/50 focus:border-gold-500 focus:outline-none text-xs transition-all" placeholder="Cari jadwal (siswa/guru)...">
+             <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500/60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </div>
+            <div class="h-px flex-1 bg-emerald-800/20"></div>
+           </div>
+           
+           <div id="schedule-list" class="space-y-3 max-h-[600px] overflow-y-auto custom-scrollbar pr-2"></div>
           </div>
 
           <div id="operator-tab-graduation" class="operator-tab hidden">
@@ -603,7 +623,7 @@
              <button id="announce-graduation-btn" class="px-5 py-2 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 text-emerald-950 font-bold hover:from-gold-400 hover:to-gold-500 transition shadow-lg shadow-gold-500/20">Umumkan Hasil Kolektif</button>
             </div>
            </div>
-           <div class="overflow-auto rounded-xl border border-emerald-700/50">
+           <div class="overflow-auto max-h-[600px] custom-scrollbar rounded-xl border border-emerald-700/50">
             <table class="min-w-full text-sm">
              <thead class="bg-emerald-950/40 text-emerald-200">
               <tr>
@@ -615,6 +635,71 @@
               </tr>
              </thead>
              <tbody id="graduation-table" class="divide-y divide-emerald-700/40 bg-emerald-900/20"></tbody>
+            </table>
+           </div>
+          </div>
+
+          <div id="operator-tab-pentasmi-history" class="operator-tab hidden">
+           <h3 class="text-xl font-bold text-white mb-2">History Tasmi Saya</h3>
+           <p class="text-emerald-200/70 text-sm mb-6">Daftar siswa yang telah Anda tasmikan.</p>
+           <div class="overflow-auto max-h-[600px] custom-scrollbar rounded-xl border border-emerald-700/50">
+            <table class="min-w-full text-sm">
+             <thead class="bg-emerald-950/40 text-emerald-200">
+              <tr>
+               <th class="text-left px-4 py-3">Tanggal</th>
+               <th class="text-left px-4 py-3">Siswa</th>
+               <th class="text-left px-4 py-3">Kelas / Juz</th>
+               <th class="text-left px-4 py-3">Status</th>
+              </tr>
+             </thead>
+             <tbody id="pentasmi-history-table" class="divide-y divide-emerald-700/40 bg-emerald-900/20"></tbody>
+            </table>
+           </div>
+          </div>
+
+          <div id="operator-tab-pentasmi-password" class="operator-tab hidden">
+           <h3 class="text-xl font-bold text-white mb-2">Ganti Password Saya</h3>
+           <p class="text-emerald-200/70 text-sm mb-6">Ubah password akun Pentasmi Anda.</p>
+           <form id="pentasmi-change-password-form" class="max-w-md card-shine bg-emerald-900/30 rounded-2xl p-6 border border-emerald-700/40">
+            <div class="space-y-4">
+             <div>
+              <label class="block text-emerald-200 mb-2 font-medium" for="pentasmi-old-pass">Password Lama</label>
+              <input type="password" id="pentasmi-old-pass" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none" required>
+             </div>
+             <div>
+              <label class="block text-emerald-200 mb-2 font-medium" for="pentasmi-new-pass">Password Baru</label>
+              <input type="password" id="pentasmi-new-pass" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none" required placeholder="Minimal 6 karakter">
+             </div>
+             <div>
+              <label class="block text-emerald-200 mb-2 font-medium" for="pentasmi-confirm-pass">Konfirmasi Password Baru</label>
+              <input type="password" id="pentasmi-confirm-pass" class="input-field w-full px-4 py-3 bg-emerald-950/40 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none" required>
+             </div>
+            </div>
+            <button type="submit" class="w-full mt-6 py-3 bg-gradient-to-r from-gold-500 to-gold-600 text-emerald-950 font-bold rounded-xl hover:from-gold-400 hover:to-gold-500 transition-all shadow-lg shadow-gold-500/20">Simpan Password Baru</button>
+           </form>
+          </div>
+
+          <div id="operator-tab-operator-monitoring" class="operator-tab hidden">
+           <h3 class="text-xl font-bold text-white mb-2">Monitoring History Pentasmi</h3>
+           <p class="text-emerald-200/70 text-sm mb-6">Pantau aktivitas tasmi yang dilakukan oleh semua Pentasmi.</p>
+           <div class="flex items-center gap-3 mb-6">
+            <select id="monitoring-pentasmi-filter" class="input-field px-4 py-2 bg-emerald-900/50 border border-emerald-700 rounded-xl text-white focus:border-gold-500 focus:outline-none text-sm">
+             <option value="all">Semua Pentasmi</option>
+            </select>
+            <button id="monitoring-refresh" class="px-4 py-2 rounded-xl border border-gold-500/50 text-gold-300 hover:bg-gold-500/10 transition text-sm">Refresh</button>
+           </div>
+           <div class="overflow-auto max-h-[600px] custom-scrollbar rounded-xl border border-emerald-700/50">
+            <table class="min-w-full text-sm">
+             <thead class="bg-emerald-950/40 text-emerald-200">
+              <tr>
+               <th class="text-left px-4 py-3">Pentasmi</th>
+               <th class="text-left px-4 py-3">Tanggal</th>
+               <th class="text-left px-4 py-3">Siswa</th>
+               <th class="text-left px-4 py-3">Kelas / Juz</th>
+               <th class="text-left px-4 py-3">Status</th>
+              </tr>
+             </thead>
+             <tbody id="monitoring-history-table" class="divide-y divide-emerald-700/40 bg-emerald-900/20"></tbody>
             </table>
            </div>
           </div>
@@ -648,7 +733,7 @@
 
             <div class="card-shine bg-emerald-900/30 rounded-2xl p-6 border border-emerald-700/40">
              <h4 class="text-white font-semibold mb-4">Daftar Akun Pentasmi</h4>
-             <div id="pentasmi-list" class="space-y-3 pr-2"></div>
+             <div id="pentasmi-list" class="space-y-3 pr-2 max-h-[400px] overflow-y-auto custom-scrollbar"></div>
             </div>
            </div>
           </div>
@@ -696,7 +781,7 @@
             </div>
             <div class="h-px flex-1 bg-emerald-800/20"></div>
            </div>
-           <div id="ann-list" class="space-y-3 w-full pr-2"></div>
+           <div id="ann-list" class="space-y-3 w-full pr-2 max-h-[500px] overflow-y-auto custom-scrollbar"></div>
           </div>
 
           <div id="operator-tab-certificates" class="operator-tab hidden">
@@ -710,7 +795,7 @@
              <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
             </div>
            </div>
-           <div class="overflow-auto rounded-xl border border-emerald-700/50">
+           <div class="overflow-auto max-h-[600px] custom-scrollbar rounded-xl border border-emerald-700/50">
             <table class="min-w-full text-sm">
              <thead class="bg-emerald-950/40 text-emerald-200">
               <tr>
@@ -738,7 +823,7 @@
              <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
             </div>
            </div>
-           <div class="overflow-auto rounded-xl border border-emerald-700/50">
+           <div class="overflow-auto max-h-[600px] custom-scrollbar rounded-xl border border-emerald-700/50">
             <table class="min-w-full text-sm">
              <thead class="bg-emerald-950/40 text-emerald-200">
               <tr>
