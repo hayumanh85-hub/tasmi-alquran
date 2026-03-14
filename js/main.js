@@ -826,13 +826,15 @@
         return 'bg-green-500/20 text-green-400';
       };
 
-      // Pisahkan pengumuman manual dan kelulusan
-      const manualItems = items.filter(it => !(it.studentResults && it.studentResults.length > 0));
-      const graduationItems = items.filter(it => it.studentResults && it.studentResults.length > 0);
+      // Pisahkan pengumuman manual dan kelulusan, saring hanya yang tidak disembunyikan
+      const visibleItems = items.filter(it => !it.hidden);
+      const manualItems = visibleItems.filter(it => !(it.studentResults && it.studentResults.length > 0));
+      const graduationItems = visibleItems.filter(it => it.studentResults && it.studentResults.length > 0);
 
       let html = '';
+      const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 
-      // 1. Render Informasi Umum (Manual)
+      // 1. Render Informasi Umum (Manual) - Dikelompokkan berdasarkan Bulan & Tahun
       if (manualItems.length > 0) {
         html += `
           <div class="mb-6 flex items-center gap-3">
@@ -845,23 +847,60 @@
           </div>
         `;
 
+        // Grouping manualItems by month/year (maintaining order)
+        const groupedManual = {};
+        const orderedMonthYears = [];
         manualItems.forEach(it => {
+          const date = new Date(it.date);
+          const key = `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+          if (!groupedManual[key]) {
+            groupedManual[key] = [];
+            orderedMonthYears.push(key);
+          }
+          groupedManual[key].push(it);
+        });
+
+        orderedMonthYears.forEach(monthYear => {
+          const groupItems = groupedManual[monthYear];
           html += `
-            <div class="card-shine bg-emerald-800/30 backdrop-blur-sm rounded-2xl p-6 border border-emerald-700/40 hover:border-gold-500/30 transition-all mb-6 animate-fade-in">
-              <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-xl bg-emerald-950/50 flex items-center justify-center text-gold-400">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <div class="mb-8">
+              <div class="flex items-center gap-2 mb-4 px-2">
+                <div class="w-1.5 h-1.5 rounded-full bg-gold-500 shadow-[0_0_8px_rgba(212,175,55,0.5)]"></div>
+                <h3 class="text-gold-400 font-bold text-[10px] uppercase tracking-[0.2em]">${monthYear}</h3>
+              </div>
+              <div class="space-y-4">
+          `;
+
+          groupItems.forEach(it => {
+            html += `
+              <div class="card-shine bg-emerald-800/30 backdrop-blur-sm rounded-2xl border border-emerald-700/40 hover:border-gold-500/30 transition-all overflow-hidden animate-fade-in">
+                <!-- Header Card (Clickable to Toggle) -->
+                <div class="p-5 flex items-center justify-between cursor-pointer group" onclick="toggleAnnouncementDetail('${it.id}')">
+                  <div class="flex items-center gap-4 min-w-0">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-950/50 flex items-center justify-center text-gold-400 shrink-0 group-hover:bg-gold-500/10 transition-colors">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                    <div class="min-w-0">
+                      <h4 class="text-sm font-bold text-white group-hover:text-gold-400 transition-colors truncate">${it.title || '-'}</h4>
+                      <p class="text-[10px] text-emerald-500/60 mt-0.5 font-medium">${formatDateId(it.date)} · <span class="${tagClass(it.tag).split(' ')[1]}">${it.tag || 'Info'}</span></p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 class="text-base font-bold text-white">${it.title || '-'}</h3>
-                    <p class="text-[10px] text-emerald-500/60">${formatDateId(it.date)}</p>
+                  <div id="ann-icon-${it.id}" class="w-8 h-8 rounded-lg bg-emerald-900/30 flex items-center justify-center text-emerald-400 group-hover:text-gold-400 transition-all duration-300">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                   </div>
                 </div>
-                <span class="px-2 py-1 rounded-full text-[10px] font-medium ${tagClass(it.tag)}">${it.tag || 'Info'}</span>
+                
+                <!-- Body Card (Collapsible) -->
+                <div id="ann-detail-${it.id}" class="hidden px-5 pb-6 border-t border-emerald-700/20 pt-4 animate-slide-down">
+                  <div class="text-emerald-200/80 text-sm leading-relaxed whitespace-pre-line bg-emerald-950/20 p-4 rounded-xl border border-emerald-800/30">
+                    ${it.body || ''}
+                  </div>
+                </div>
               </div>
-              <div class="text-emerald-200/80 text-sm leading-relaxed whitespace-pre-line">
-                ${it.body || ''}
+            `;
+          });
+
+          html += `
               </div>
             </div>
           `;
@@ -870,35 +909,63 @@
 
       // 2. Render Informasi Kelulusan Siswa (Merged Table)
       if (graduationItems.length > 0) {
-        // Gabungkan semua studentResults dari semua graduationItems
-        let allStudentResults = [];
-        const allPeriods = new Set();
+        // Kumpulkan SEMUA periode unik dari seluruh database (schedules, students, announcements)
+        const periodSet = new Set();
+        (schedules || []).forEach(s => { if (s.period && s.period !== '-') periodSet.add(s.period); });
+        (students || []).forEach(s => { if (s.period && s.period !== '-') periodSet.add(s.period); });
+        (announcements || []).forEach(a => {
+          if (a.studentResults) {
+            a.studentResults.forEach(r => { if (r.period && r.period !== '-') periodSet.add(r.period); });
+          }
+        });
         
+        // Daftar periode yang diurutkan (terbaru dulu)
+        const sortedPeriods = [...periodSet].sort((a, b) => b.localeCompare(a));
+
+        let allStudentResults = [];
+        const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+        
+        const formatPeriod = (p) => {
+          if (!p || p === '-') return '-';
+          // Jika format YYYY-MM (misal: 2025-03)
+          if (p.includes('-') && p.length === 7) {
+            const [year, month] = p.split('-');
+            const mIdx = parseInt(month) - 1;
+            return monthNames[mIdx] ? `${monthNames[mIdx]} ${year}` : p;
+          }
+          // Jika format teks biasa (misal: "2024/2025 Genap"), kembalikan apa adanya
+          return p;
+        };
+
         graduationItems.forEach(it => {
           it.studentResults.forEach(res => {
-            // Coba ambil periode dari jadwal (schedules) atau gunakan periode dari pengumuman jika ada
-            const schedule = schedules.find(s => s.studentId === res.studentId);
-            const period = res.period || schedule?.period || 'Lainnya';
-            allPeriods.add(period);
-            
+            // Cari periode asli (raw)
+            let rawPeriod = res.period;
+            if (!rawPeriod || rawPeriod === '-') {
+              const sch = (schedules || []).find(s => s.studentId === res.studentId);
+              rawPeriod = sch?.period;
+              if (!rawPeriod || rawPeriod === '-') {
+                const std = (students || []).find(s => s.id === res.studentId);
+                rawPeriod = std?.period || '-';
+              }
+            }
+
             allStudentResults.push({
               ...res,
-              period,
+              displayPeriod: formatPeriod(rawPeriod),
+              rawPeriod: rawPeriod || '-',
               announcementId: it.id,
               announcementDate: it.date
             });
           });
         });
 
-        // Urutkan periode (terbaru dulu)
-        const sortedPeriods = [...allPeriods].sort().reverse();
-
         // Filter hasil siswa berdasarkan pencarian dan periode
         if (searchTerm) {
           allStudentResults = allStudentResults.filter(r => (r.studentName || '').toLowerCase().includes(searchTerm));
         }
         if (selectedPeriod !== 'all') {
-          allStudentResults = allStudentResults.filter(r => r.period === selectedPeriod);
+          allStudentResults = allStudentResults.filter(r => r.rawPeriod === selectedPeriod);
         }
 
         // Urutkan berdasarkan tanggal pengumuman terbaru
@@ -910,7 +977,7 @@
             <td class="px-4 py-3">
               <div class="flex flex-col">
                 <span class="text-white text-sm font-medium group-hover:text-gold-400 transition-colors">${res.studentName}</span>
-                <span class="text-[9px] text-emerald-500/60 font-medium uppercase tracking-widest mt-0.5">${res.period}</span>
+                <span class="text-[9px] text-emerald-500/60 font-medium uppercase tracking-widest mt-0.5">${res.displayPeriod}</span>
               </div>
             </td>
             <td class="px-4 py-3">
@@ -939,9 +1006,9 @@
             </div>
             <div class="flex items-center gap-2 bg-emerald-950/40 border border-emerald-700/50 rounded-2xl px-4 py-2 shrink-0">
               <span class="text-emerald-300 text-[10px] font-bold uppercase tracking-widest">Periode:</span>
-              <select id="public-grad-period" class="bg-transparent text-white text-xs focus:outline-none cursor-pointer font-medium min-w-[120px]">
+              <select id="public-grad-period" class="bg-transparent text-white text-xs focus:outline-none cursor-pointer font-medium min-w-[140px]">
                 <option value="all" ${selectedPeriod === 'all' ? 'selected' : ''}>Semua Periode</option>
-                ${sortedPeriods.map(p => `<option value="${p}" ${selectedPeriod === p ? 'selected' : ''}>${p}</option>`).join('')}
+                ${sortedPeriods.map(p => `<option value="${p}" ${selectedPeriod === p ? 'selected' : ''}>${formatPeriod(p)}</option>`).join('')}
               </select>
             </div>
           </div>
@@ -1714,6 +1781,7 @@
           studentName: it.studentName,
           date: it.date,
           status: it.graduationStatus,
+          period: it.period || '-',
           juz: it.juz || (students || []).find(s => s.id === it.studentId)?.juz || '-'
         })),
         created_at: new Date().toISOString()
@@ -1764,31 +1832,53 @@
       }
 
       list.forEach(it => {
+        const isHidden = !!it.hidden;
         wrap.insertAdjacentHTML('beforeend', `
-          <div class="p-3 rounded-2xl bg-emerald-950/40 border border-emerald-700/30 flex items-center justify-between gap-4 group hover:border-gold-500/20 hover:bg-emerald-950/60 transition-all duration-300 w-full overflow-hidden">
-            <div class="flex items-center gap-4 overflow-hidden min-w-0 flex-1">
-              <div class="flex items-center justify-center shrink-0">
-                <input type="checkbox" class="ann-checkbox w-4 h-4 rounded-lg border-emerald-700 bg-emerald-900/50 text-gold-500 focus:ring-gold-500/20 cursor-pointer transition-all" data-id="${it.id}">
-              </div>
-              <div class="overflow-hidden min-w-0 flex-1">
-                <div class="flex items-center gap-2 mb-0.5">
-                  <span class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest ${tagClass(it.tag)} shrink-0">${it.tag || 'Info'}</span>
-                  <div class="text-white font-bold text-xs truncate group-hover:text-gold-400 transition-colors">${it.title || '-'}</div>
+          <div class="rounded-2xl ${isHidden ? 'bg-emerald-950/10 opacity-60' : 'bg-emerald-950/40'} border ${isHidden ? 'border-emerald-800/20' : 'border-emerald-700/30'} group hover:border-gold-500/20 hover:bg-emerald-950/60 transition-all duration-300 w-full overflow-hidden animate-fade-in">
+            <!-- Header (Clickable to Toggle) -->
+            <div class="p-3 flex items-center justify-between gap-4 cursor-pointer" onclick="toggleAnnouncementDetail('${it.id}')">
+              <div class="flex items-center gap-3 overflow-hidden min-w-0 flex-1">
+                <div class="flex items-center justify-center shrink-0" onclick="event.stopPropagation()">
+                  <input type="checkbox" class="ann-checkbox w-4 h-4 rounded-lg border-emerald-700 bg-emerald-900/50 text-gold-500 focus:ring-gold-500/20 cursor-pointer transition-all" data-id="${it.id}">
                 </div>
-                <div class="flex items-center gap-2 overflow-hidden">
-                  <span class="text-[10px] text-emerald-500/60 font-medium shrink-0">${formatDateId(it.date)}</span>
-                  <div class="h-1 w-1 rounded-full bg-emerald-800 shrink-0"></div>
-                  <div class="text-emerald-200/50 text-[11px] truncate italic flex-1 min-w-0">${it.body || ''}</div>
+                <div class="overflow-hidden min-w-0 flex-1">
+                  <div class="flex items-center gap-2 mb-0.5">
+                    <span class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest ${tagClass(it.tag)} shrink-0">${it.tag || 'Info'}</span>
+                    <div class="text-white font-bold text-xs truncate group-hover:text-gold-400 transition-colors">${it.title || '-'} ${isHidden ? '<span class="text-[9px] text-red-400 font-normal ml-1">(Disembunyikan)</span>' : ''}</div>
+                  </div>
+                  <div class="flex items-center gap-2 overflow-hidden">
+                    <span class="text-[10px] text-emerald-500/60 font-medium shrink-0">${formatDateId(it.date)}</span>
+                    <div class="h-1 w-1 rounded-full bg-emerald-800 shrink-0"></div>
+                    <div class="text-emerald-200/50 text-[11px] truncate italic flex-1 min-w-0">Klik untuk melihat detail...</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="shrink-0 flex items-center gap-1" onclick="event.stopPropagation()">
+                <button class="ann-action p-2 rounded-xl text-emerald-400 hover:text-gold-400 hover:bg-emerald-800/50 transition-all" data-id="${it.id}" data-action="toggle-visibility" title="${isHidden ? 'Tampilkan' : 'Sembunyikan'}">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    ${isHidden 
+                      ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/>' 
+                      : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>'}
+                  </svg>
+                </button>
+                <button class="ann-action p-2 rounded-xl text-emerald-400 hover:text-gold-400 hover:bg-emerald-800/50 transition-all" data-id="${it.id}" data-action="edit" title="Edit">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                </button>
+                <button class="ann-action p-2 rounded-xl text-emerald-400 hover:text-red-400 hover:bg-red-500/10 transition-all" data-id="${it.id}" data-action="delete" title="Hapus">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+                <div id="ann-icon-${it.id}" class="p-2 text-emerald-500/40 group-hover:text-gold-500/60 transition-all duration-300">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                 </div>
               </div>
             </div>
-            <div class="shrink-0 flex items-center gap-2">
-              <button class="ann-action p-2 rounded-xl text-emerald-400 hover:text-gold-400 hover:bg-emerald-800/50 transition-all" data-id="${it.id}" data-action="edit" title="Edit">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-              </button>
-              <button class="ann-action p-2 rounded-xl text-emerald-400 hover:text-red-400 hover:bg-red-500/10 transition-all" data-id="${it.id}" data-action="delete" title="Hapus">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-              </button>
+
+            <!-- Detail (Collapsible Body) -->
+            <div id="ann-detail-${it.id}" class="hidden px-14 pb-4 border-t border-emerald-700/20 pt-3 animate-slide-down">
+              <div class="text-emerald-200/80 text-[11px] leading-relaxed whitespace-pre-line bg-emerald-950/30 p-3 rounded-xl border border-emerald-800/40">
+                ${it.body || ''}
+              </div>
             </div>
           </div>
         `);
@@ -3246,6 +3336,20 @@
         document.getElementById('ann-date').value = item.date || '';
         document.getElementById('ann-body').value = item.body || '';
         showToast('Edit pengumuman: ubah lalu Simpan.', 'success');
+      } else if (action === 'toggle-visibility') {
+        const newHiddenStatus = !item.hidden;
+        showToast(newHiddenStatus ? 'Menyembunyikan pengumuman...' : 'Menampilkan pengumuman...', 'info');
+        try {
+          await window.dataSdk?.update?.('announcements', id, { hidden: newHiddenStatus });
+          showToast(newHiddenStatus ? 'Pengumuman disembunyikan' : 'Pengumuman ditampilkan', 'success');
+          // Subscription will trigger re-render, but for immediate feedback:
+          item.hidden = newHiddenStatus; 
+          renderAnnouncementsAdmin();
+          renderPublicAnnouncements();
+        } catch (err) {
+          console.error('Error toggling visibility:', err);
+          showToast('Gagal mengubah visibilitas.', 'error');
+        }
       } else if (action === 'delete') {
         const confirmed = await showConfirmationModal({
           title: 'Hapus Pengumuman?',
