@@ -979,9 +979,7 @@
       if (!container) return;
       
       const searchInput = document.getElementById('public-grad-search');
-      const periodFilter = document.getElementById('public-grad-period');
       const searchTerm = (searchInput?.value || '').toLowerCase().trim();
-      const selectedPeriod = periodFilter?.value || 'all';
 
       const items = (announcements || [])
         .slice()
@@ -1083,46 +1081,32 @@
       }
 
       // 2. Render Informasi Kelulusan Siswa (Merged Table)
-      // FILTER: Hanya tampilkan kelulusan dari BULAN SEKARANG
-      const now = new Date();
-      const currentMonth = now.getMonth();
-      const currentYear = now.getFullYear();
-
-      const graduationItemsThisMonth = graduationItems.filter(it => {
-        const d = new Date(it.date);
-        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-      });
-
-      if (graduationItemsThisMonth.length > 0) {
-        // Kumpulkan SEMUA periode unik dari seluruh database (schedules, students, announcements)
-        const periodSet = new Set();
-        (schedules || []).forEach(s => { if (s.period && s.period !== '-') periodSet.add(s.period); });
-        (students || []).forEach(s => { if (s.period && s.period !== '-') periodSet.add(s.period); });
-        graduationItemsThisMonth.forEach(a => {
-          if (a.studentResults) {
-            a.studentResults.forEach(r => { if (r.period && r.period !== '-') periodSet.add(r.period); });
-          }
-        });
+      // Ambil hanya pengumuman kelulusan terbaru (periode yang sedang berjalan)
+      let latestGraduationItems = [];
+      if (graduationItems.length > 0) {
+        // Urutkan berdasarkan tanggal terbaru
+        const sortedGrads = graduationItems.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+        const latestDate = sortedGrads[0].date;
         
-        // Daftar periode yang diurutkan (terbaru dulu)
-        const sortedPeriods = [...periodSet].sort((a, b) => b.localeCompare(a));
+        // Ambil semua pengumuman yang memiliki tanggal yang sama dengan yang terbaru
+        latestGraduationItems = sortedGrads.filter(it => it.date === latestDate);
+      }
 
+      if (latestGraduationItems.length > 0) {
         let allStudentResults = [];
         const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
         
         const formatPeriod = (p) => {
           if (!p || p === '-') return '-';
-          // Jika format YYYY-MM (misal: 2025-03)
           if (p.includes('-') && p.length === 7) {
             const [year, month] = p.split('-');
             const mIdx = parseInt(month) - 1;
             return monthNames[mIdx] ? `${monthNames[mIdx]} ${year}` : p;
           }
-          // Jika format teks biasa (misal: "2024/2025 Genap"), kembalikan apa adanya
           return p;
         };
 
-        graduationItemsThisMonth.forEach(it => {
+        latestGraduationItems.forEach(it => {
           it.studentResults.forEach(res => {
             // Cari periode asli (raw)
             let rawPeriod = res.period;
@@ -1145,16 +1129,13 @@
           });
         });
 
-        // Filter hasil siswa berdasarkan pencarian dan periode
+        // Filter hasil siswa berdasarkan pencarian
         if (searchTerm) {
           allStudentResults = allStudentResults.filter(r => (r.studentName || '').toLowerCase().includes(searchTerm));
         }
-        if (selectedPeriod !== 'all') {
-          allStudentResults = allStudentResults.filter(r => r.rawPeriod === selectedPeriod);
-        }
 
-        // Urutkan berdasarkan tanggal pengumuman terbaru
-        allStudentResults.sort((a, b) => String(b.announcementDate || '').localeCompare(String(a.announcementDate || '')));
+        // Urutkan berdasarkan nama
+        allStudentResults.sort((a, b) => (a.studentName || '').localeCompare(b.studentName || ''));
 
         const tableRows = allStudentResults.map((res, idx) => `
           <tr class="hover:bg-emerald-800/40 transition-colors group cursor-pointer border-b border-emerald-700/30 last:border-0" onclick="openGraduationDetailModal('${res.studentId}', '${res.announcementId}')">
@@ -1179,7 +1160,7 @@
             <div class="h-px flex-1 bg-gradient-to-r from-transparent via-gold-500/30 to-transparent"></div>
             <h2 class="text-gold-400 font-bold text-sm tracking-widest uppercase flex items-center gap-2">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-              Informasi Kelulusan Siswa
+              INFORMASI KELULUSAN SISWA
             </h2>
             <div class="h-px flex-1 bg-gradient-to-r from-transparent via-gold-500/30 to-transparent"></div>
           </div>
@@ -1188,13 +1169,6 @@
             <div class="relative flex-1">
               <input type="text" id="public-grad-search" class="w-full pl-10 pr-4 py-3 bg-emerald-950/40 border border-emerald-700/50 rounded-2xl text-white placeholder-emerald-500/50 focus:border-gold-500 focus:outline-none text-sm transition-all" placeholder="Cari nama siswa..." value="${searchTerm.replace(/"/g, '&quot;')}">
               <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500/50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-            </div>
-            <div class="flex items-center gap-2 bg-emerald-950/40 border border-emerald-700/50 rounded-2xl px-4 py-2 shrink-0">
-              <span class="text-emerald-300 text-[10px] font-bold uppercase tracking-widest">Periode:</span>
-              <select id="public-grad-period" class="bg-transparent text-white text-xs focus:outline-none cursor-pointer font-medium min-w-[140px]">
-                <option value="all" ${selectedPeriod === 'all' ? 'selected' : ''}>Semua Periode</option>
-                ${sortedPeriods.map(p => `<option value="${p}" ${selectedPeriod === p ? 'selected' : ''}>${formatPeriod(p)}</option>`).join('')}
-              </select>
             </div>
           </div>
 
@@ -1219,9 +1193,8 @@
 
       container.innerHTML = html;
 
-      // Add event listeners for search and period filter (Delegation on container)
+      // Add event listener for search (Delegation on container)
       const newSearch = document.getElementById('public-grad-search');
-      const newPeriod = document.getElementById('public-grad-period');
       
       newSearch?.addEventListener('input', () => {
         // Render ulang tapi jaga focus
@@ -1235,7 +1208,6 @@
           input.value = val;
         }
       });
-      newPeriod?.addEventListener('change', () => renderPublicAnnouncements());
     }
 
     function renderGraduatedDataPublic() {
@@ -1290,17 +1262,48 @@
                     <th class="px-2 py-2">Nama</th>
                     <th class="px-2 py-2">Kelas</th>
                     <th class="px-2 py-2">Juz</th>
+                    <th class="px-2 py-2 text-right">Sertifikat</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-emerald-700/10">
-                  ${studentsInPeriod.map((s, idx) => `
-                    <tr class="hover:bg-emerald-800/20 transition-colors">
-                      <td class="px-2 py-3 text-emerald-500/50 font-mono">${idx + 1}</td>
-                      <td class="px-2 py-3 text-white font-medium">${s.name || '-'}</td>
-                      <td class="px-2 py-3 text-emerald-200/70">${s.class || '-'}</td>
-                      <td class="px-2 py-3 text-emerald-200/70">${s.juz || '-'}</td>
-                    </tr>
-                  `).join('')}
+                  ${studentsInPeriod.map((s, idx) => {
+                    const certData = (certificates || {})[s.id];
+                    const hasFile = certData && (typeof certData === 'object' ? !!certData.url : !!certData);
+                    const hasDrive = certData && typeof certData === 'object' && !!certData.driveLink;
+
+                    let certButtons = '';
+                    if (hasFile) {
+                      certButtons += `
+                        <button class="p-1.5 rounded-lg bg-gold-500/10 text-gold-400 hover:bg-gold-500/20 transition-all border border-gold-500/20" 
+                          onclick="viewCertificatePublic('${s.id}', '${(s.name || '').replace(/'/g, "\\'")}')" title="File Sertifikat">
+                          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        </button>
+                      `;
+                    }
+                    if (hasDrive) {
+                      const driveLink = typeof certData === 'object' ? certData.driveLink : null;
+                      certButtons += `
+                        <button class="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-all border border-emerald-500/20 ml-1" 
+                          onclick="window.open('${driveLink}', '_blank')" title="Google Drive">
+                          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                        </button>
+                      `;
+                    }
+
+                    return `
+                      <tr class="hover:bg-emerald-800/20 transition-colors">
+                        <td class="px-2 py-3 text-emerald-500/50 font-mono">${idx + 1}</td>
+                        <td class="px-2 py-3 text-white font-medium">${s.name || '-'}</td>
+                        <td class="px-2 py-3 text-emerald-200/70">${s.class || '-'}</td>
+                        <td class="px-2 py-3 text-emerald-200/70">${s.juz || '-'}</td>
+                        <td class="px-2 py-3 text-right">
+                          <div class="flex items-center justify-end gap-1">
+                            ${certButtons || '<span class="text-[9px] text-emerald-500/30 italic">Belum ada</span>'}
+                          </div>
+                        </td>
+                      </tr>
+                    `;
+                  }).join('')}
                 </tbody>
               </table>
             </div>
@@ -1385,19 +1388,47 @@
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-emerald-700/10">
-                  ${studentsInPeriod.map((s, idx) => `
-                    <tr class="hover:bg-emerald-800/10 transition-colors group">
-                      <td class="px-4 py-3 text-emerald-500/50 font-mono">${idx + 1}</td>
-                      <td class="px-4 py-3 text-white font-medium">${s.name || '-'}</td>
-                      <td class="px-4 py-3 text-emerald-200/70">${s.class || '-'}</td>
-                      <td class="px-4 py-3 text-emerald-200/70">${s.juz || '-'}</td>
-                      <td class="px-4 py-3 text-right">
-                        <button class="p-1.5 rounded-lg bg-emerald-800/50 text-gold-400 hover:bg-emerald-700 transition opacity-0 group-hover:opacity-100" onclick="viewStudentDetail('${(s.name || '').replace(/'/g, "\\'")}')" title="Lihat Data Lengkap">
-                          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                  ${studentsInPeriod.map((s, idx) => {
+                    const certData = (certificates || {})[s.id];
+                    const hasFile = certData && (typeof certData === 'object' ? !!certData.url : !!certData);
+                    const hasDrive = certData && typeof certData === 'object' && !!certData.driveLink;
+
+                    let certButtons = '';
+                    if (hasFile) {
+                      certButtons += `
+                        <button class="p-1.5 rounded-lg bg-gold-500/10 text-gold-400 hover:bg-gold-500/20 transition-all border border-gold-500/20" 
+                          onclick="viewCertificatePublic('${s.id}', '${(s.name || '').replace(/'/g, "\\'")}')" title="File Sertifikat">
+                          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                         </button>
-                      </td>
-                    </tr>
-                  `).join('')}
+                      `;
+                    }
+                    if (hasDrive) {
+                      const driveLink = typeof certData === 'object' ? certData.driveLink : null;
+                      certButtons += `
+                        <button class="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-all border border-emerald-500/20 ml-1" 
+                          onclick="window.open('${driveLink}', '_blank')" title="Google Drive">
+                          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                        </button>
+                      `;
+                    }
+
+                    return `
+                      <tr class="hover:bg-emerald-800/10 transition-colors group">
+                        <td class="px-4 py-3 text-emerald-500/50 font-mono">${idx + 1}</td>
+                        <td class="px-4 py-3 text-white font-medium">${s.name || '-'}</td>
+                        <td class="px-4 py-3 text-emerald-200/70">${s.class || '-'}</td>
+                        <td class="px-4 py-3 text-emerald-200/70">${s.juz || '-'}</td>
+                        <td class="px-4 py-3 text-right whitespace-nowrap">
+                          <div class="flex items-center justify-end gap-1">
+                            ${certButtons}
+                            <button class="p-1.5 rounded-lg bg-emerald-800/50 text-gold-400 hover:bg-emerald-700 transition opacity-0 group-hover:opacity-100" onclick="viewStudentDetail('${(s.name || '').replace(/'/g, "\\'")}')" title="Lihat Data Lengkap">
+                              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    `;
+                  }).join('')}
                 </tbody>
               </table>
             </div>
@@ -2313,7 +2344,30 @@
           <button class="grad-action px-3 py-1 rounded-lg border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/10 transition ml-2" data-id="${it.id}" data-action="view-result">Lihat Lembar</button>
         ` : (role === 'admin' ? '<span class="text-emerald-500/30 text-[10px] italic ml-2">Belum ada lembar</span>' : '');
 
-        const deleteButton = role === 'admin' ? `<button class="grad-action px-3 py-1 rounded-lg border border-red-500/40 text-red-300 hover:bg-red-500/10 transition ml-2" data-id="${it.id}" data-action="delete">Hapus</button>` : '';
+        const deleteButton = role === 'admin' ? `<button class="grad-action p-2 rounded-lg border border-red-500/40 text-red-300 hover:bg-red-500/10 transition ml-2" data-id="${it.id}" data-action="delete" title="Hapus"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>` : '';
+
+        // Sertifikat logic
+        const certData = (certificates || {})[it.studentId];
+        const hasCertFile = certData && (typeof certData === 'object' ? !!certData.url : !!certData);
+        const hasCertDrive = certData && typeof certData === 'object' && !!certData.driveLink;
+
+        let certButtons = '';
+        if (it.graduationStatus === 'Lulus' && (hasCertFile || hasCertDrive)) {
+          if (hasCertFile) {
+            certButtons += `
+              <button class="grad-action p-2 rounded-lg border border-gold-500/40 text-gold-300 hover:bg-gold-500/10 transition ml-2" data-id="${it.studentId}" data-name="${it.studentName}" data-action="view-cert-file" title="File Sertifikat">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              </button>
+            `;
+          }
+          if (hasCertDrive) {
+            certButtons += `
+              <button class="grad-action p-2 rounded-lg border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/10 transition ml-2" data-id="${it.studentId}" data-action="view-cert-drive" title="Google Drive Sertifikat">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              </button>
+            `;
+          }
+        }
 
         const editPeriodButton = role === 'admin' ? `
           <button class="grad-action p-2 rounded-lg bg-emerald-800/50 text-gold-400 hover:bg-emerald-700 transition ml-2" data-id="${it.id}" data-action="edit-period" title="Edit Periode">
@@ -2354,6 +2408,7 @@
             </td>
             <td class="px-4 py-3 text-right whitespace-nowrap">
               ${viewButton}
+              ${certButtons}
               ${uploadButton}
               ${actionButtons}
               ${deleteButton}
@@ -2420,6 +2475,29 @@
             const item = (schedules || []).find(it => it.id === id);
             if (item?.tasmiResultSheet) {
               window.open(item.tasmiResultSheet, '_blank');
+            }
+          } else if (action === 'view-cert-file') {
+            const studentId = btn.dataset.id;
+            const studentName = btn.dataset.name;
+            const certData = (certificates || {})[studentId];
+            const fileUrl = typeof certData === 'object' ? certData.url : certData;
+            if (fileUrl) {
+              if (fileUrl.startsWith('http')) {
+                window.open(fileUrl, '_blank');
+              } else {
+                openFileModal(fileUrl, `Sertifikat-Tasmi-${studentName.replace(/\s+/g, '-')}.png`);
+              }
+            } else {
+              showToast('File sertifikat tidak ditemukan.', 'error');
+            }
+          } else if (action === 'view-cert-drive') {
+            const studentId = btn.dataset.id;
+            const certData = (certificates || {})[studentId];
+            const driveLink = typeof certData === 'object' ? certData.driveLink : null;
+            if (driveLink) {
+              window.open(driveLink, '_blank');
+            } else {
+              showToast('Link Google Drive tidak ditemukan.', 'error');
             }
           } else if (action === 'delete') {
             const confirmed = await showConfirmationModal({
