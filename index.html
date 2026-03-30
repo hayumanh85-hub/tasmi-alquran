@@ -498,6 +498,27 @@
              <p class="text-emerald-200/70 text-sm mb-6">Sesuaikan teks dan informasi yang tampil di halaman depan.</p>
              <form id="homepage-settings-form" class="space-y-6">
               <div class="card-shine bg-emerald-900/30 rounded-2xl p-6 border border-emerald-700/40">
+               <h4 class="text-white font-semibold mb-4 text-sm uppercase tracking-wider">Background & Tema</h4>
+               <div class="space-y-4">
+                <div>
+                 <label class="block text-emerald-200 mb-2 font-medium text-xs">Background Website</label>
+                 <div class="flex items-center gap-4">
+                  <div id="bg-preview-container" class="w-24 h-16 rounded-xl border border-gold-500/30 overflow-hidden bg-emerald-950/50 flex items-center justify-center">
+                   <img id="bg-preview-img" src="" class="hidden w-full h-full object-cover">
+                   <svg id="bg-placeholder-svg" class="w-6 h-6 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                  </div>
+                  <div class="flex flex-wrap gap-2">
+                   <input type="file" id="bg-upload-input" class="hidden" accept="image/*">
+                   <button type="button" onclick="document.getElementById('bg-upload-input').click()" class="px-4 py-2 rounded-xl bg-gold-500/10 text-gold-300 text-xs hover:bg-gold-500/20 transition border border-gold-500/20">Ubah Background</button>
+                   <button type="button" id="bg-delete-btn" class="hidden px-4 py-2 rounded-xl bg-red-500/10 text-red-400 text-xs hover:bg-red-500/20 transition border border-red-500/20">Reset ke Default</button>
+                  </div>
+                 </div>
+                 <p class="text-[10px] text-emerald-400/60 mt-2 italic">* Foto ini akan digunakan sebagai latar belakang utama website.</p>
+                </div>
+               </div>
+              </div>
+
+              <div class="card-shine bg-emerald-900/30 rounded-2xl p-6 border border-emerald-700/40">
                <h4 class="text-white font-semibold mb-4 text-sm uppercase tracking-wider">Hero Section (Paling Atas)</h4>
                <div class="space-y-4">
                 <div>

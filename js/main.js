@@ -1745,6 +1745,22 @@
     function applyHomepageSettings() {
       const homeSettings = settings.homepage || lsGet(STORAGE_KEYS.homepage, {});
       const regSettings = settings.registration || lsGet(STORAGE_KEYS.registration, { enabled: true });
+
+      // Apply Global Background
+      const appWrapper = document.querySelector('.app-wrapper');
+      if (appWrapper) {
+        const bgUrl = homeSettings.bg_url || homeSettings.bg_base64;
+        if (bgUrl) {
+          appWrapper.style.backgroundImage = `linear-gradient(to bottom, rgba(2, 44, 34, 0.85), rgba(6, 78, 87, 0.85)), url("${bgUrl}")`;
+          appWrapper.style.backgroundSize = 'cover';
+          appWrapper.style.backgroundPosition = 'center';
+          appWrapper.style.backgroundAttachment = 'fixed';
+          appWrapper.classList.remove('bg-gradient-to-b', 'from-emerald-950', 'via-emerald-900', 'to-emerald-950');
+        } else {
+          appWrapper.style.backgroundImage = '';
+          appWrapper.classList.add('bg-gradient-to-b', 'from-emerald-950', 'via-emerald-900', 'to-emerald-950');
+        }
+      }
       
       // Update Registration Status UI in Operator Panel
       const regToggle = document.getElementById('registration-status-toggle');
@@ -1840,6 +1856,24 @@
     function loadHomepageSettingsIntoForm() {
       const homeSettings = settings.homepage || lsGet(STORAGE_KEYS.homepage, {});
       
+      // Background Preview
+      const bgUrl = homeSettings.bg_url || homeSettings.bg_base64;
+      const bgImg = document.getElementById('bg-preview-img');
+      const bgSvg = document.getElementById('bg-placeholder-svg');
+      const bgDel = document.getElementById('bg-delete-btn');
+      if (bgUrl && bgImg && bgSvg && bgDel) {
+        bgImg.src = bgUrl;
+        bgImg.classList.remove('hidden');
+        bgSvg.classList.add('hidden');
+        bgDel.classList.remove('hidden');
+        currentBgBase64 = bgUrl;
+      } else {
+        if (bgImg) bgImg.classList.add('hidden');
+        if (bgSvg) bgSvg.classList.remove('hidden');
+        if (bgDel) bgDel.classList.add('hidden');
+        currentBgBase64 = null;
+      }
+
       // Hero
       if (document.getElementById('hero-arabic-input')) document.getElementById('hero-arabic-input').value = homeSettings.hero_arabic || '';
       if (document.getElementById('hero-title-input')) document.getElementById('hero-title-input').value = homeSettings.hero_title || '';
@@ -4132,6 +4166,46 @@
       });
     }
 
+    let currentBgBase64 = null;
+    document.getElementById('bg-upload-input')?.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (!file.type.startsWith('image/')) {
+        showToast('Mohon unggah file gambar.', 'error');
+        return;
+      }
+      showToast('Sedang memproses background...', 'info');
+      try {
+        currentBgBase64 = await compressImage(file, 1920, 0.7);
+        const img = document.getElementById('bg-preview-img');
+        const svg = document.getElementById('bg-placeholder-svg');
+        const delBtn = document.getElementById('bg-delete-btn');
+        if (img) {
+          img.src = currentBgBase64;
+          img.classList.remove('hidden');
+        }
+        if (svg) svg.classList.add('hidden');
+        if (delBtn) delBtn.classList.remove('hidden');
+        showToast('Background siap disimpan.', 'success');
+      } catch (err) {
+        showToast('Gagal memproses gambar.', 'error');
+      }
+    });
+
+    document.getElementById('bg-delete-btn')?.addEventListener('click', () => {
+      currentBgBase64 = '';
+      const img = document.getElementById('bg-preview-img');
+      const svg = document.getElementById('bg-placeholder-svg');
+      const delBtn = document.getElementById('bg-delete-btn');
+      if (img) {
+        img.src = '';
+        img.classList.add('hidden');
+      }
+      if (svg) svg.classList.remove('hidden');
+      if (delBtn) delBtn.classList.add('hidden');
+      showToast('Background direset (Klik Simpan untuk menerapkan).', 'info');
+    });
+
     handleFileUpload('logo-upload', STORAGE_KEYS.logo, 'logo');
     handleFileUpload('favicon-upload', STORAGE_KEYS.favicon, 'favicon');
 
@@ -4914,7 +4988,12 @@
     document.getElementById('homepage-settings-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       try { requireOperator(); } catch { return; }
+      
+      showGlobalLoading('Menyimpan pengaturan beranda...');
+      
+      const homeSettings = settings.homepage || lsGet(STORAGE_KEYS.homepage, {});
       const settingsData = {
+        ...homeSettings,
         hero_arabic: document.getElementById('hero-arabic-input')?.value || '',
         hero_title: document.getElementById('hero-title-input')?.value || '',
         hero_subtitle: document.getElementById('hero-subtitle-input')?.value || '',
@@ -4925,9 +5004,26 @@
         footer_phone: document.getElementById('footer-phone-input')?.value || '',
         footer_email: document.getElementById('footer-email-input')?.value || '',
       };
+
+      // Handle Background Update
+      if (currentBgBase64 && currentBgBase64.startsWith('data:image')) {
+        const uploadRes = await window.dataSdk?.uploadFile?.('settings/background', currentBgBase64).catch(() => ({ isOk: false }));
+        if (uploadRes.isOk) {
+          settingsData.bg_url = uploadRes.url;
+          settingsData.bg_base64 = ''; // Clear base64 if storage works
+        } else {
+          settingsData.bg_url = '';
+          settingsData.bg_base64 = currentBgBase64;
+        }
+      } else if (currentBgBase64 === '') {
+        settingsData.bg_url = '';
+        settingsData.bg_base64 = '';
+      }
+
       await window.dataSdk?.set?.('settings', 'homepage', { value: settingsData });
       lsSet(STORAGE_KEYS.homepage, settingsData);
       applyHomepageSettings();
+      hideGlobalLoading();
       showToast('Konten beranda berhasil diperbarui.', 'success');
     });
 
@@ -4939,6 +5035,7 @@
       });
       if (confirmed) {
         localStorage.removeItem(STORAGE_KEYS.homepage);
+        currentBgBase64 = null;
         applyHomepageSettings();
         loadHomepageSettingsIntoForm();
         showToast('Konten beranda berhasil direset.', 'success');
