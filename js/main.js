@@ -367,10 +367,13 @@
         // New: Separate subscription for certificates to avoid 1MB document limit
         await window.dataSdk.subscribe('certificates', {
           onDataChanged(data) {
-            // data is an array of {id: studentId, base64: ..., url: ...}
+            // data is an array of {id: studentId, base64: ..., url: ..., driveLink: ...}
             const newCerts = {};
             data.forEach(item => {
-              newCerts[item.id] = item.url || item.base64;
+              newCerts[item.id] = {
+                url: item.url || item.base64 || '',
+                driveLink: item.driveLink || ''
+              };
             });
             certificates = newCerts;
             if (isOperatorLoggedIn()) renderCertificateTable();
@@ -845,9 +848,50 @@
 
       // Certificate
       const certs = Object.keys(certificates || {}).length > 0 ? certificates : lsGet(STORAGE_KEYS.certificates, {});
-      if (isPassed && certs[res.studentId]) {
+      const certData = certs[res.studentId];
+      const driveBtn = document.getElementById('grad-modal-drive-btn');
+
+      if (isPassed && certData) {
+        let hasContent = false;
         certContainer.classList.remove('hidden');
-        certBtn.onclick = () => viewCertificatePublic(res.studentId, res.studentName);
+
+        // Check for File
+        const fileUrl = typeof certData === 'object' ? certData.url : certData;
+        if (fileUrl) {
+          certBtn.classList.remove('hidden');
+          certBtn.onclick = () => {
+            if (fileUrl.startsWith('http')) {
+              window.open(fileUrl, '_blank');
+            } else {
+              openFileModal(fileUrl, `Sertifikat-Tasmi-${res.studentName.replace(/\s+/g, '-')}.png`);
+            }
+          };
+          hasContent = true;
+        } else {
+          certBtn.classList.add('hidden');
+        }
+
+        // Check for Drive Link
+        const driveLink = typeof certData === 'object' ? certData.driveLink : null;
+        if (driveLink) {
+          driveBtn.classList.remove('hidden');
+          driveBtn.onclick = () => window.open(driveLink, '_blank');
+          hasContent = true;
+        } else {
+          driveBtn.classList.add('hidden');
+        }
+
+        // If neither, hide container
+        if (!hasContent) certContainer.classList.add('hidden');
+        
+        // Adjust grid columns if only one button
+        if (fileUrl && driveLink) {
+          certContainer.classList.remove('md:grid-cols-1');
+          certContainer.classList.add('md:grid-cols-2');
+        } else {
+          certContainer.classList.remove('md:grid-cols-2');
+          certContainer.classList.add('md:grid-cols-1');
+        }
       } else {
         certContainer.classList.add('hidden');
       }
@@ -1377,6 +1421,23 @@
       const certs = Object.keys(certificates).length > 0 ? certificates : lsGet(STORAGE_KEYS.certificates, {});
       const certData = certs[studentId];
       if (certData) {
+        // If it's the new object structure
+        if (typeof certData === 'object') {
+          if (certData.url) {
+             if (certData.url.startsWith('http')) {
+               window.open(certData.url, '_blank');
+             } else {
+               openFileModal(certData.url, `Sertifikat-Tasmi-${studentName.replace(/\s+/g, '-')}.png`);
+             }
+          } else if (certData.driveLink) {
+             window.open(certData.driveLink, '_blank');
+          } else {
+             showToast('Sertifikat belum tersedia.', 'error');
+          }
+          return;
+        }
+
+        // Fallback for old string structure
         if (certData.startsWith('http')) {
           window.open(certData, '_blank');
         } else {
@@ -3232,7 +3293,9 @@
       }
 
       paginatedList.forEach(s => {
-        const hasCert = !!certs[s.id];
+        const certData = certs[s.id] || { url: '', driveLink: '' };
+        const hasFile = !!certData.url;
+        const hasDrive = !!certData.driveLink;
         const isThisUploading = isUploadingCert && currentUploadStudentId === s.id;
 
         let certPreview = '';
@@ -3241,10 +3304,22 @@
             <svg class="animate-spin h-3 w-3 mr-1" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
             Proses...
           </span>`;
-        } else if (hasCert) {
-          certPreview = `<button class="cert-action text-gold-400 hover:underline" data-id="${s.id}" data-action="view">Lihat Sertifikat</button>`;
         } else {
-          certPreview = `<span class="text-emerald-200/40 text-xs italic">Belum diunggah</span>`;
+          const fileHtml = hasFile 
+            ? `<button class="cert-action text-gold-400 hover:underline flex items-center gap-1" data-id="${s.id}" data-action="view-file">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                File
+               </button>`
+            : `<span class="text-emerald-200/20 italic">No File</span>`;
+            
+          const driveHtml = hasDrive
+            ? `<button class="cert-action text-emerald-400 hover:underline flex items-center gap-1" data-id="${s.id}" data-action="view-drive">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                Drive
+               </button>`
+            : `<span class="text-emerald-200/20 italic">No Drive</span>`;
+
+          certPreview = `<div class="flex flex-col gap-1 text-[10px]">${fileHtml}${driveHtml}</div>`;
         }
 
         const scheduleEntry = (schedules || []).find(it => it.studentId === s.id && it.graduationStatus === 'Lulus');
@@ -3265,9 +3340,9 @@
                   data-id="${s.id}" data-action="upload" ${isThisUploading ? 'disabled' : ''}>
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
                 </button>
-                ${hasCert && !isThisUploading ? `
+                ${(hasFile || hasDrive) && !isThisUploading ? `
                   <button class="cert-action p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition" 
-                    data-id="${s.id}" data-action="delete" title="Hapus">
+                    data-id="${s.id}" data-action="delete" title="Hapus Semua Sertifikat">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                   </button>` : ''}
               </div>
@@ -3285,8 +3360,9 @@
       const action = btn.dataset.action;
       const certs = certificates || {};
 
-      if (action === 'view') {
-        const url = certs[id];
+      if (action === 'view-file') {
+        const cert = certs[id];
+        const url = cert?.url;
         if (url) {
           if (url.startsWith('http')) {
             window.open(url, '_blank');
@@ -3294,7 +3370,15 @@
             openFileModal(url, `Sertifikat-${id}.png`);
           }
         } else {
-          showToast('Sertifikat tidak ditemukan.', 'error');
+          showToast('File sertifikat tidak ditemukan.', 'error');
+        }
+      } else if (action === 'view-drive') {
+        const cert = certs[id];
+        const url = cert?.driveLink;
+        if (url) {
+          window.open(url, '_blank');
+        } else {
+          showToast('Link Google Drive tidak ditemukan.', 'error');
         }
       } else if (action === 'upload') {
         currentUploadStudentId = id;
@@ -3456,13 +3540,18 @@
         
         if (storageRes.isOk) {
           console.log('DEBUG: Storage upload success.');
+          const existingCert = certs[currentUploadStudentId] || {};
           await window.dataSdk?.set?.('certificates', currentUploadStudentId, { 
             id: currentUploadStudentId,
             url: storageRes.url,
+            driveLink: existingCert.driveLink || '',
             updated_at: new Date().toISOString()
           });
           
-          certificates[currentUploadStudentId] = storageRes.url;
+          certificates[currentUploadStudentId] = {
+            url: storageRes.url,
+            driveLink: existingCert.driveLink || ''
+          };
           lsSet(STORAGE_KEYS.certificates, certificates);
           showToast('Sertifikat berhasil diunggah.', 'success');
         } else {
@@ -3475,14 +3564,19 @@
           console.warn('DEBUG: Storage failed or skipped. Using Firestore fallback...');
           showToast('Menggunakan mode cadangan...', 'info');
           
+          const existingCert = certs[currentUploadStudentId] || {};
           const firestoreRes = await window.dataSdk?.set?.('certificates', currentUploadStudentId, { 
             id: currentUploadStudentId,
             base64: compressedBase64,
+            driveLink: existingCert.driveLink || '',
             updated_at: new Date().toISOString()
           });
           
           if (firestoreRes.isOk) {
-            certificates[currentUploadStudentId] = compressedBase64;
+            certificates[currentUploadStudentId] = {
+              url: compressedBase64,
+              driveLink: existingCert.driveLink || ''
+            };
             lsSet(STORAGE_KEYS.certificates, certificates);
             showToast('Sertifikat berhasil diunggah (Mode Cadangan).', 'success');
           } else {
@@ -4046,8 +4140,8 @@
       if (!modal || !dialog || !input || !idInput) return;
       
       idInput.value = studentId;
-      const existing = (certificates || {})[studentId] || '';
-      input.value = existing.startsWith('http') ? existing : '';
+      const certData = (certificates || {})[studentId] || {};
+      input.value = certData.driveLink || '';
       
       modal.classList.remove('hidden');
       document.body.classList.add('overflow-hidden');
@@ -4069,28 +4163,33 @@
     document.getElementById('cert-link-cancel')?.addEventListener('click', closeCertLinkModal);
     document.getElementById('cert-link-save')?.addEventListener('click', async () => {
       const id = document.getElementById('cert-link-student-id')?.value;
-      const url = document.getElementById('cert-link-input')?.value?.trim();
+      const driveLink = document.getElementById('cert-link-input')?.value?.trim();
       
       if (!id) return;
-      if (!url) {
+      if (!driveLink) {
         showToast('Mohon masukkan link yang valid.', 'error');
         return;
       }
       
-      if (!url.startsWith('http')) {
+      if (!driveLink.startsWith('http')) {
         showToast('Link harus diawali dengan http:// atau https://', 'error');
         return;
       }
 
       showToast('Menyimpan link...', 'info');
       try {
+        const existingCert = certificates[id] || {};
         await window.dataSdk?.set?.('certificates', id, { 
           id, 
-          url, 
+          url: existingCert.url || '',
+          driveLink, 
           updated_at: new Date().toISOString() 
         });
         
-        certificates[id] = url;
+        certificates[id] = {
+          url: existingCert.url || '',
+          driveLink: driveLink
+        };
         closeCertLinkModal();
         renderCertificateTable();
         showToast('Link sertifikat berhasil disimpan.', 'success');
