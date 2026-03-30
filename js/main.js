@@ -13,7 +13,8 @@
       pentasmiAccounts: 'operator.pentasmiAccounts.v1',
       certificates: 'operator.certificates.v1',
       congratulations: 'operator.congratulations.v1',
-      homepage: 'operator.homepage.v1'
+      homepage: 'operator.homepage.v1',
+      gallery: 'operator.gallery.v1'
     };
 
     function lsGet(key, fallback) {
@@ -49,6 +50,10 @@
     let certificatesCurrentPage = 1;
     let certificatesEntriesPerPage = 10;
     let graduationChart = null;
+    let gallery = [];
+    let galleryCurrentIndex = 0;
+    let galleryInterval = null;
+    let hasDetectedStorageCORS = false; // Flag to reduce console noise
     let certificates = {}; // Cloud-only
     let congratulations = {}; // Cloud-only
     if (!certificates || Array.isArray(certificates)) certificates = {};
@@ -62,6 +67,24 @@
       toast.textContent = message;
       toast.className = `toast ${type} show`;
       setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    function showGlobalLoading(message = 'Sedang Mengunggah...') {
+      const overlay = document.getElementById('global-loading-overlay');
+      const msgEl = document.getElementById('loading-message');
+      if (overlay && msgEl) {
+        msgEl.textContent = message;
+        overlay.classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
+      }
+    }
+
+    function hideGlobalLoading() {
+      const overlay = document.getElementById('global-loading-overlay');
+      if (overlay) {
+        overlay.classList.add('hidden');
+        document.body.classList.remove('overflow-hidden');
+      }
     }
 
     function isOperatorLoggedIn() {
@@ -81,6 +104,9 @@
       }
       if (page === 'data-kelulusan') {
         renderGraduatedDataPublic();
+      }
+      if (page === 'beranda') {
+        renderGalleryPublic();
       }
 
       document.querySelectorAll('.page-section').forEach(section => {
@@ -394,6 +420,15 @@
           }
         });
 
+        // New: Subscription for gallery
+        await window.dataSdk.subscribe('gallery', {
+          onDataChanged(data) {
+            gallery = data || [];
+            renderGalleryPublic();
+            if (isOperatorLoggedIn()) renderGalleryAdmin();
+          }
+        });
+
         await window.dataSdk.subscribe('settings', {
           onDataChanged(data) {
             // data is an array of {id: key, value: actual_value}
@@ -640,6 +675,8 @@
       document.querySelectorAll('.operator-tab').forEach(el => el.classList.add('hidden'));
       const target = document.getElementById(`operator-tab-${tab}`);
       if (target) target.classList.remove('hidden');
+
+      if (tab === 'gallery') renderGalleryAdmin();
 
       document.querySelectorAll('.operator-nav-btn').forEach(btn => {
         const active = btn.dataset.tab === tab;
@@ -973,6 +1010,229 @@
         });
       }
     }
+
+    function renderGalleryPublic() {
+      const section = document.getElementById('graduation-gallery-section');
+      const wrapper = document.getElementById('slides-wrapper');
+      const dotsContainer = document.getElementById('slideshow-dots');
+      if (!section || !wrapper || !dotsContainer) return;
+
+      if (gallery.length === 0) {
+        section.classList.add('hidden');
+        return;
+      }
+
+      section.classList.remove('hidden');
+      wrapper.innerHTML = '';
+      dotsContainer.innerHTML = '';
+
+      gallery.forEach((item, idx) => {
+        // Create Slide
+        const slide = document.createElement('div');
+        slide.className = `absolute inset-0 transition-opacity duration-1000 ease-in-out ${idx === 0 ? 'opacity-100 z-10' : 'opacity-0 z-0'}`;
+        slide.innerHTML = `
+          <img src="${item.url || item.base64}" class="w-full h-full object-cover" alt="Galeri Wisuda ${idx + 1}">
+          <div class="absolute inset-0 bg-gradient-to-t from-emerald-950/80 via-transparent to-transparent"></div>
+        `;
+        wrapper.appendChild(slide);
+
+        // Create Dot
+        const dot = document.createElement('button');
+        dot.className = `w-2.5 h-2.5 rounded-full transition-all duration-300 ${idx === 0 ? 'bg-gold-500 w-8' : 'bg-white/30 hover:bg-white/50'}`;
+        dot.onclick = () => goToSlide(idx);
+        dotsContainer.appendChild(dot);
+      });
+
+      galleryCurrentIndex = 0;
+      startGalleryAutoNext();
+    }
+
+    function goToSlide(index) {
+      const slides = document.getElementById('slides-wrapper')?.children;
+      const dots = document.getElementById('slideshow-dots')?.children;
+      if (!slides || !dots || slides.length === 0) return;
+
+      // Handle loop
+      if (index >= slides.length) index = 0;
+      if (index < 0) index = slides.length - 1;
+
+      // Update Slides
+      for (let i = 0; i < slides.length; i++) {
+        slides[i].className = `absolute inset-0 transition-opacity duration-1000 ease-in-out ${i === index ? 'opacity-100 z-10' : 'opacity-0 z-0'}`;
+      }
+
+      // Update Dots
+      for (let i = 0; i < dots.length; i++) {
+        dots[i].className = `w-2.5 h-2.5 rounded-full transition-all duration-300 ${i === index ? 'bg-gold-500 w-8' : 'bg-white/30 hover:bg-white/50'}`;
+      }
+
+      galleryCurrentIndex = index;
+      startGalleryAutoNext(); // Reset timer
+    }
+
+    function startGalleryAutoNext() {
+      if (galleryInterval) clearInterval(galleryInterval);
+      if (gallery.length <= 1) return;
+      
+      galleryInterval = setInterval(() => {
+        goToSlide(galleryCurrentIndex + 1);
+      }, 5000); // 5 seconds
+    }
+
+    // Event listeners for slideshow buttons
+    document.getElementById('prev-slide')?.addEventListener('click', () => goToSlide(galleryCurrentIndex - 1));
+    document.getElementById('next-slide')?.addEventListener('click', () => goToSlide(galleryCurrentIndex + 1));
+
+    function renderGalleryAdmin() {
+      const list = document.getElementById('gallery-admin-list');
+      if (!list) return;
+
+      if (gallery.length === 0) {
+        list.innerHTML = `
+          <div class="col-span-full py-12 text-center bg-emerald-950/20 rounded-2xl border border-emerald-800/30">
+            <p class="text-emerald-500/50 text-sm italic">Belum ada foto galeri.</p>
+          </div>
+        `;
+        return;
+      }
+
+      list.innerHTML = gallery.map(item => `
+        <div class="relative group aspect-square rounded-xl overflow-hidden border border-emerald-700/50 bg-emerald-950/40">
+          <img src="${item.url || item.base64}" class="w-full h-full object-cover">
+          <div class="absolute inset-0 bg-emerald-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <button class="p-3 bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white rounded-full transition-all" onclick="deleteGalleryPhoto('${item.id}')" title="Hapus Foto">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    window.deleteGalleryPhoto = async function(id) {
+      const confirmed = await showConfirmationModal({
+        title: 'Hapus Foto Galeri?',
+        body: 'Anda yakin ingin menghapus foto ini dari galeri beranda?'
+      });
+
+      if (confirmed) {
+        try {
+          showToast('Menghapus foto...', 'info');
+          // Try remove file from storage if it has URL
+          const item = gallery.find(g => g.id === id);
+          if (item && item.url) {
+            await window.dataSdk?.removeFile?.(`gallery/${id}`).catch(() => {});
+          }
+          
+          await window.dataSdk?.remove?.('gallery', id);
+          showToast('Foto berhasil dihapus.', 'success');
+        } catch (err) {
+          console.error('Delete gallery error:', err);
+          showToast('Gagal menghapus foto.', 'error');
+        }
+      }
+    };
+
+    document.getElementById('add-gallery-photo-btn')?.addEventListener('click', () => {
+      document.getElementById('gallery-photo-input').click();
+    });
+
+    document.getElementById('gallery-photo-input')?.addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files || []);
+      if (files.length === 0) return;
+
+      showToast(`Sedang memproses ${files.length} foto...`, 'info');
+      showGlobalLoading(`Sedang memproses ${files.length} foto...`);
+      
+      try {
+        let successCount = 0;
+        let failCount = 0;
+
+        for (const file of files) {
+          if (!file.type.startsWith('image/')) {
+            failCount++;
+            continue;
+          }
+          
+          const id = 'GAL-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+          showGlobalLoading(`Mengunggah foto ${successCount + failCount + 1} dari ${files.length}...`);
+          
+          // 1. Compress Image (Larger for Storage, Smaller for Firestore)
+          console.log(`DEBUG: Processing gallery image ${id}...`);
+          const compressedBase64 = await compressImage(file, 1600, 0.8).catch(err => {
+            console.error('Compression failed:', err);
+            return null;
+          });
+
+          if (!compressedBase64) {
+            failCount++;
+            continue;
+          }
+
+          // 2. Attempt Storage Upload with Timeout
+          let storageRes = { isOk: false, error: 'skipped' };
+          if (!hasDetectedStorageCORS) {
+            const uploadWithTimeout = () => {
+              return new Promise(async (resolve) => {
+                const timeout = setTimeout(() => resolve({ isOk: false, error: 'timeout' }), 10000); // 10s for gallery
+                try {
+                  const res = await window.dataSdk?.uploadFile?.(`gallery/${id}`, compressedBase64);
+                  clearTimeout(timeout);
+                  resolve(res);
+                } catch (err) {
+                  clearTimeout(timeout);
+                  resolve({ isOk: false, error: err.message });
+                }
+              });
+            };
+            storageRes = await uploadWithTimeout();
+          }
+
+          if (storageRes.isOk) {
+            console.log('DEBUG: Gallery storage upload success.');
+            await window.dataSdk?.set?.('gallery', id, { 
+              id, 
+              url: storageRes.url, 
+              created_at: new Date().toISOString() 
+            });
+            successCount++;
+          } else {
+            if (storageRes.error !== 'skipped') hasDetectedStorageCORS = true;
+
+            // 3. Fallback to Firestore (Must be smaller to stay under 1MB)
+            console.warn('DEBUG: Storage failed. Using Firestore fallback with extra compression...');
+            const fallbackBase64 = await compressImage(file, 1000, 0.5).catch(() => null);
+            
+            if (fallbackBase64 && fallbackBase64.length < 1000000) { // < 1MB
+              const firestoreRes = await window.dataSdk?.set?.('gallery', id, { 
+                id, 
+                base64: fallbackBase64, 
+                created_at: new Date().toISOString() 
+              });
+              if (firestoreRes.isOk) {
+                successCount++;
+              } else {
+                failCount++;
+              }
+            } else {
+              console.error('DEBUG: Image too large for Firestore fallback.');
+              failCount++;
+            }
+          }
+        }
+
+        if (successCount > 0) {
+          showToast(`${successCount} foto berhasil ditambahkan.${failCount > 0 ? ` (${failCount} gagal)` : ''}`, 'success');
+        } else if (failCount > 0) {
+          showToast(`Gagal mengunggah ${failCount} foto.`, 'error');
+        }
+      } catch (err) {
+        console.error('Upload gallery final error:', err);
+        showToast('Terjadi kesalahan saat mengunggah galeri.', 'error');
+      } finally {
+        hideGlobalLoading();
+        e.target.value = '';
+      }
+    });
 
     function renderPublicAnnouncements() {
       const container = document.getElementById('public-announcements-container');
@@ -2461,6 +2721,7 @@
               
               try {
                 showToast('Sedang mengunggah lembar hasil...', 'info');
+                showGlobalLoading('Sedang mengunggah lembar hasil tasmi...');
                 const fileUrl = await window.dataSdk?.uploadFile?.(file, `tasmi_sheets/${id}_${Date.now()}`);
                 await window.dataSdk?.update?.('schedules', id, { tasmiResultSheet: fileUrl });
                 showToast('Lembar hasil berhasil diunggah!', 'success');
@@ -2468,6 +2729,8 @@
               } catch (err) {
                 console.error('Upload tasmi sheet error:', err);
                 showToast('Gagal mengunggah lembar hasil.', 'error');
+              } finally {
+                hideGlobalLoading();
               }
             };
             fileInput.click();
@@ -3227,6 +3490,7 @@
       isUploadingCongrats = true;
       renderCongratulationsTable(); 
       showToast('Sedang memproses...', 'info');
+      showGlobalLoading('Sedang mengunggah ucapan selamat...');
         
       try {
         const compressedBase64 = await compressImage(file);
@@ -3278,6 +3542,7 @@
       } finally {
         isUploadingCongrats = false;
         currentCongratsStudentId = null;
+        hideGlobalLoading();
         e.target.value = ''; 
         renderCongratulationsTable();
       }
@@ -3286,7 +3551,6 @@
     // Certificate logic
     let isUploadingCert = false;
     let currentUploadStudentId = null;
-    let hasDetectedStorageCORS = false; // Flag to reduce console noise
 
     function renderCertificateTable() {
       requireOperator();
@@ -3574,6 +3838,7 @@
       isUploadingCert = true;
       renderCertificateTable(); 
       showToast('Sedang memproses & kompresi...', 'info');
+      showGlobalLoading('Sedang memproses & mengunggah sertifikat...');
         
       try {
         // 1. Compress the image first
@@ -3591,6 +3856,8 @@
 
         // 2. ATTEMPT 1: Upload to Firebase Storage with Timeout (only if not already failed CORS)
         let storageRes = { isOk: false, error: 'skipped' };
+        
+        const certs = certificates || {};
         
         if (!hasDetectedStorageCORS) {
           console.log('DEBUG: Attempting Storage upload with 5s timeout...');
@@ -3668,6 +3935,7 @@
         console.log('DEBUG: Upload process finished.');
         isUploadingCert = false;
         currentUploadStudentId = null;
+        hideGlobalLoading();
         e.target.value = ''; 
         renderCertificateTable();
       }

@@ -164,6 +164,35 @@
       </div>
      </div>
 
+     <!-- Graduation Gallery Section -->
+     <section id="graduation-gallery-section" class="py-20 px-4 hidden">
+      <div class="max-w-6xl mx-auto">
+       <div class="text-center mb-16">
+        <h2 class="star-decoration text-3xl md:text-4xl font-bold text-white mb-4">Galeri Wisuda Tahfidz</h2>
+        <div class="geometric-border w-32 mx-auto"></div>
+       </div>
+       
+       <div class="relative group max-w-4xl mx-auto">
+        <!-- Slideshow Container -->
+        <div id="slideshow-container" class="relative aspect-video rounded-3xl overflow-hidden border-2 border-gold-500/20 shadow-2xl shadow-gold-500/10 bg-emerald-950/40">
+         <!-- Slides will be injected here -->
+         <div id="slides-wrapper" class="h-full w-full relative"></div>
+         
+         <!-- Navigation Arrows -->
+         <button id="prev-slide" class="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-emerald-950/60 backdrop-blur-md border border-gold-500/30 text-gold-400 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-gold-500 hover:text-emerald-950 z-10">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+         </button>
+         <button id="next-slide" class="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-emerald-950/60 backdrop-blur-md border border-gold-500/30 text-gold-400 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-gold-500 hover:text-emerald-950 z-10">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+         </button>
+         
+         <!-- Dots Navigation -->
+         <div id="slideshow-dots" class="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-10"></div>
+        </div>
+       </div>
+      </div>
+     </section>
+
      <div class="py-20 px-4">
       <div class="max-w-6xl mx-auto">
        <div class="text-center mb-16">
@@ -353,6 +382,10 @@
            <button class="operator-nav-btn whitespace-nowrap px-5 py-2.5 rounded-2xl border border-emerald-700/50 text-emerald-200/80 hover:text-white hover:border-gold-500/40 hover:bg-emerald-800/30 transition-all duration-300 text-xs md:text-sm font-medium shrink-0 flex items-center gap-2" data-tab="settings">
             <span class="w-1.5 h-1.5 rounded-full bg-current opacity-40"></span>
             Pengaturan Website
+           </button>
+           <button class="operator-nav-btn whitespace-nowrap px-5 py-2.5 rounded-2xl border border-emerald-700/50 text-emerald-200/80 hover:text-white hover:border-gold-500/40 hover:bg-emerald-800/30 transition-all duration-300 text-xs md:text-sm font-medium shrink-0 flex items-center gap-2" data-tab="gallery">
+            <span class="w-1.5 h-1.5 rounded-full bg-current opacity-40"></span>
+            Galeri Wisuda
            </button>
            <button class="operator-nav-btn whitespace-nowrap px-5 py-2.5 rounded-2xl border border-emerald-700/50 text-emerald-200/80 hover:text-white hover:border-gold-500/40 hover:bg-emerald-800/30 transition-all duration-300 text-xs md:text-sm font-medium shrink-0 flex items-center gap-2" data-tab="students">
             <span class="w-1.5 h-1.5 rounded-full bg-current opacity-40"></span>
@@ -556,6 +589,25 @@
               </div>
              </form>
             </section>
+           </div>
+          </div>
+
+          <div id="operator-tab-gallery" class="operator-tab hidden p-6">
+           <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+            <div>
+             <h3 class="text-xl font-bold text-white mb-2">Kelola Galeri Wisuda</h3>
+             <p class="text-emerald-200/70 text-sm">Unggah foto-foto acara wisuda tahfidz untuk ditampilkan di beranda.</p>
+            </div>
+            <button id="add-gallery-photo-btn" class="px-6 py-3 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 text-emerald-950 font-bold hover:from-gold-400 hover:to-gold-500 transition-all shadow-lg shadow-gold-500/20 flex items-center gap-2">
+             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+             Tambah Foto
+            </button>
+           </div>
+           
+           <input type="file" id="gallery-photo-input" class="hidden" accept="image/*" multiple>
+           
+           <div id="gallery-admin-list" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            <!-- Gallery items will be injected here -->
            </div>
           </div>
 
@@ -1491,7 +1543,33 @@
      </div>
     </div>
    </div>
-  </div>
+
+   <!-- Global Loading Overlay -->
+   <div id="global-loading-overlay" class="hidden fixed inset-0 z-[9999] flex items-center justify-center bg-emerald-950/80 backdrop-blur-md">
+    <div class="text-center">
+     <div class="relative w-24 h-24 mx-auto mb-6">
+      <div class="absolute inset-0 border-4 border-gold-500/20 rounded-full"></div>
+      <div class="absolute inset-0 border-4 border-gold-500 border-t-transparent rounded-full animate-spin"></div>
+      <div class="absolute inset-4 border-4 border-emerald-500/20 rounded-full"></div>
+      <div class="absolute inset-4 border-4 border-emerald-500 border-b-transparent rounded-full animate-spin-reverse"></div>
+      <div class="absolute inset-0 flex items-center justify-center">
+       <svg class="w-8 h-8 text-gold-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+      </div>
+     </div>
+     <h3 id="loading-message" class="text-xl font-bold text-white mb-2">Sedang Mengunggah...</h3>
+     <p class="text-emerald-300/70 text-sm animate-pulse">Mohon tunggu sebentar, jangan tutup halaman ini.</p>
+    </div>
+   </div>
+
+   <style>
+    @keyframes spin-reverse {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(-360deg); }
+    }
+    .animate-spin-reverse {
+      animation: spin-reverse 1.5s linear infinite;
+    }
+   </style>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="js/main.js"></script>
