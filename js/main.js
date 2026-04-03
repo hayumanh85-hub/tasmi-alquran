@@ -1262,7 +1262,17 @@
       // Pisahkan pengumuman manual dan kelulusan, saring hanya yang tidak disembunyikan
       const visibleItems = items.filter(it => !it.hidden);
       const manualItems = visibleItems.filter(it => !(it.studentResults && it.studentResults.length > 0));
-      const graduationItems = visibleItems.filter(it => it.studentResults && it.studentResults.length > 0);
+      
+      // FILTER: Hanya tampilkan pengumuman kelulusan siswa di bulan yang sedang berjalan
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+
+      const graduationItems = visibleItems.filter(it => {
+        if (!(it.studentResults && it.studentResults.length > 0)) return false;
+        const itemDate = new Date(it.date);
+        return itemDate.getMonth() === currentMonth && itemDate.getFullYear() === currentYear;
+      });
 
       let html = '';
       const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
