@@ -1,0 +1,9 @@
+{
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "destination": "https://tasmi-alquran-app.web.app/$1",
+      "permanent": true
+    }
+  ]
+}
